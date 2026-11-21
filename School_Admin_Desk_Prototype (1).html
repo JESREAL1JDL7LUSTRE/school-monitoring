@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>School Admin Desk – Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4f7;--pn:#fff;--ink:#14213a;--mute:#566380;--ln:#d6dce8;--br:#17407a;--bi:#fff;--gold:#f2b705;--wb:#fff3d9;--wt:#8a5200;--bb:#fde6e4;--bt:#a3201a;--gb:#e0f3e8;--gt:#17623a;--ib:#e6eefb;--it:#17407a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1624;--pn:#18223a;--ink:#e8edf8;--mute:#9aa8c6;--ln:#2c3a5a;--br:#6fa0ee;--bi:#0b1530;--wb:#3a2d10;--wt:#f5c56b;--bb:#3d1a1a;--bt:#ff9d96;--gb:#12341f;--gt:#7fd6a2;--ib:#1b2c50;--it:#a9c6f7}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 "Atkinson Hyperlegible",system-ui,Segoe UI,Arial,sans-serif;min-height:100%}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.side{background:var(--br);color:var(--bi);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.side h2{font-size:18px;margin:0 6px 2px;line-height:1.25}.side small{margin:0 6px 14px;opacity:.8;display:block}
+.nav{display:flex;gap:12px;align-items:center;background:none;border:0;color:inherit;text-align:left;padding:12px;border-radius:8px;font-weight:700;width:100%}
+.nav:hover{background:rgba(255,255,255,.12)}.nav.on{background:var(--gold);color:#14213a}
+.nav span{font-size:20px;width:26px;text-align:center}.side .foot{margin-top:auto;font-size:14px;opacity:.75;padding:6px}
+main{padding:0 28px 40px;min-width:0}
+.top{display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:4px solid var(--gold);margin-bottom:22px}
+.seal{width:52px;height:52px;border-radius:50%;background:var(--br);color:var(--bi);display:grid;place-items:center;font-weight:700;flex:none;font-size:13px}
+.top p{margin:0;color:var(--mute);font-size:14px}.top h1{margin:0;font-size:24px;line-height:1.2}
+.view{display:none}.view.on{display:block}
+h3{font-size:20px;margin:0 0 10px}.sub{color:var(--mute);margin:0 0 16px}
+.btn{background:var(--br);color:var(--bi);border:0;border-radius:8px;padding:11px 18px;font-weight:700}
+.btn.alt{background:var(--pn);color:var(--br);border:2px solid var(--br)}
+.box{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:18px}
+.work{display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
+.w{display:flex;align-items:center;gap:14px;background:var(--pn);border:1px solid var(--ln);border-left:8px solid var(--gold);border-radius:8px;padding:12px 16px}
+.w.bad{border-left-color:var(--bt)}.w.ok{border-left-color:var(--gt)}
+.w b.n{font-size:26px;min-width:40px;text-align:center}.w .t{flex:1}.w .t small{display:block;color:var(--mute)}
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.g{background:var(--pn);border:1px solid var(--ln);border-radius:10px;overflow:hidden}
+.g h4{margin:0;padding:10px 14px;background:var(--br);color:var(--bi);font-size:16px}
+.g button.r{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--ln);padding:10px 14px;text-align:left}
+.g button.r:hover{background:var(--ib)}.g button.r:last-child{border:0}.g .r b{font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{border:2px solid var(--ln);background:var(--pn);border-radius:999px;padding:6px 14px}
+.chip.on{background:var(--br);color:var(--bi);border-color:var(--br)}
+.bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.bar input,.in{border:2px solid var(--ln);background:var(--pn);border-radius:8px;padding:10px 12px;min-width:0}
+.bar input{flex:1;min-width:200px}
+.tw{overflow-x:auto;border:1px solid var(--ln);border-radius:10px;background:var(--pn)}
+table{border-collapse:collapse;width:100%;min-width:820px}
+th{background:var(--ib);color:var(--it);text-align:left;padding:10px 12px;font-size:15px;white-space:nowrap}
+td{padding:10px 12px;border-top:1px solid var(--ln);vertical-align:middle}tr:hover td{background:var(--bg)}
+td small{display:block;color:var(--mute);font-size:14px}
+.tag{display:inline-block;border-radius:6px;padding:2px 9px;font-size:14px;font-weight:700;background:var(--ib);color:var(--it)}
+.tag.w{background:var(--wb);color:var(--wt);border:0;border-left:0;padding:2px 9px;display:inline-block}.tag.b{background:var(--bb);color:var(--bt)}.tag.g{background:var(--gb);color:var(--gt)}
+.pg{height:10px;background:var(--ln);border-radius:5px;width:90px;overflow:hidden;display:inline-block;vertical-align:middle}
+.pg i{display:block;height:100%;background:var(--gt)}.pg.part i{background:var(--wt)}
+.forms{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:26px}
+.forms h4{grid-column:1/-1;margin:10px 0 0}
+.fb{background:var(--pn);border:2px solid var(--ln);border-radius:8px;padding:12px;text-align:left;font-weight:700}
+.fb:hover{border-color:var(--br)}.fb.live{border-color:var(--br);background:var(--ib)}
+.split{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+.fld{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;font-weight:700;font-size:15px}.fld .in{font-weight:400}
+.doc{background:#fff;color:#111;border:1px solid var(--ln);padding:34px 44px;font:16px/1.7 "Times New Roman",serif;min-height:420px}
+.doc .lh{text-align:center;line-height:1.35;border-bottom:3px double #111;padding-bottom:10px;margin-bottom:22px;font-size:15px}
+.doc h2{text-align:center;letter-spacing:2px;margin:12px 0 22px;font-size:22px}
+.sig{margin-top:50px;text-align:right}.sig b{display:block;text-decoration:underline}
+dialog{border:0;border-radius:12px;padding:22px;max-width:560px;width:calc(100% - 24px);background:var(--pn);color:var(--ink)}
+dialog::backdrop{background:rgba(10,20,40,.55)}.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.calc{background:var(--ib);color:var(--it);border-radius:8px;padding:12px 14px;margin:6px 0 14px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#toast.on{opacity:1}
+@media(max-width:860px){.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:10px}.side h2,.side small,.foot{display:none}.nav{width:auto;white-space:nowrap}main{padding:0 14px 30px}.split{grid-template-columns:1fr}.doc{padding:20px}.row2{grid-template-columns:1fr}}
+.kp{padding:12px 14px;font-size:26px;font-weight:700}.tagbox{border:1px dashed var(--mute);padding:10px;font-size:14px;line-height:1.4;background:var(--pn)}.tags{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px;text-align:center}.sg b{display:block;border-top:1px solid var(--ink);padding-top:4px}.in.sm{width:90px}
+.side{overflow-y:auto}.nav.grp{font-size:16px}.nav em{margin-left:auto;font-style:normal}.nav.sub{padding:9px 12px 9px 30px;font-weight:400}.nav.grp.sub{font-weight:700;font-size:15px}.nav.sub2{padding:7px 12px 7px 46px;font-weight:400;font-size:15px}.nav.sub3{padding:5px 12px 5px 64px;font-weight:400;font-size:14px}.nav.cur{font-weight:700;background:rgba(255,255,255,.14)}.nav.sub span,.nav.sub2 span{width:14px}
+@media(max-width:860px){.side{flex-direction:column;max-height:55vh;overflow-y:auto}.nav{width:100%}}
+.lnk{background:none;border:0;padding:0;color:var(--br);text-decoration:underline;font-weight:700;text-align:left}
+.cal-months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:16px;max-width:960px}
+.cal-months button{min-height:44px;padding:6px;background:var(--ib);color:var(--it);border:1px solid var(--ln);border-radius:8px;font-size:15px;font-weight:700}
+.cal-months button:nth-child(n+4):nth-child(-n+6){background:var(--gb);color:var(--gt)}
+.cal-months button:nth-child(n+7):nth-child(-n+9){background:var(--wb);color:var(--wt)}
+.cal-months button:nth-child(n+10){background:var(--bb);color:var(--bt)}
+.cal-months button:hover{border-color:currentColor}
+.cal-months button[aria-pressed="true"]{background:var(--br);color:var(--bi);border-color:var(--br);box-shadow:inset 0 -3px var(--gold)}
+.cal-panel{max-width:960px;background:var(--pn);border:1px solid var(--ln);border-radius:10px}
+.cal-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:12px}
+.cal-toolbar h4{font-size:clamp(19px,3vw,27px);margin:0}
+.cal-controls{display:flex;gap:6px}.cal-controls .btn{min-width:44px;min-height:44px;padding:5px 9px}
+.cal-table{min-width:0;table-layout:fixed}
+.cal-table th,.cal-table td{text-align:center;padding:4px;font-variant-numeric:tabular-nums}
+.cal-table th abbr{text-decoration:none}
+.cal-table td{height:clamp(42px,7vw,75px);border-inline:1px solid var(--ln)}
+.cal-table td:first-child{border-inline-start:0}.cal-table td:last-child{border-inline-end:0}
+.cal-table td:is(:first-child,:last-child),.cal-table td:empty{background:var(--bg)}
+.cal-table td time[aria-current="date"]{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--gold);color:#14213a;font-weight:700}
+@media(max-width:620px){.cal-months{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media print{body.pe .app,body.pe .app *{display:none!important}body.pe dialog{display:block!important;position:static;box-shadow:none;max-width:none;width:100%}body.pe dialog *{display:revert}body.pe .noprint{display:none!important}}
+@media print{.side,.top,.noprint,.view:not(#v-forms):not(#v-prop):not(#v-rep){display:none!important}.app{display:block}main{padding:0}.doc{border:0;padding:0}body{background:#fff}}
+</style></head><body>
+<div class="app">
+<aside class="side noprint">
+<h2 id="sName">Matatag Elementary School</h2><small>School Admin Desk</small>
+<button class="nav on" data-v="dash"><span>🏠</span>Home</button>
+<button class="nav" data-v="emp"><span>👥</span>Employees</button>
+<button class="nav" data-v="cal"><span aria-hidden="true">📅</span>Calendar</button>
+<button class="nav" data-v="nosi"><span>📈</span>Step increments</button>
+<button class="nav" data-v="forms"><span>🖨️</span>Forms &amp; printing</button>
+<button class="nav" data-v="rep"><span>📋</span>Reports</button>
+<button class="nav" data-v="logs"><span>🗂️</span>Logs</button>
+<button class="nav" data-v="prop"><span>📦</span>Property &amp; inventory</button>
+<button class="nav" data-v="set"><span>⚙️</span>School settings</button>
+<div class="foot">Prototype · sample data only</div>
+</aside>
+<main>
+<div class="top"><div class="seal">DepEd</div><div><p id="sSdo">Department of Education · Region V (Bicol) · Schools Division Office Albay</p><h1 id="sName2">Matatag Elementary School</h1></div></div>
+
+<section class="view on" id="v-dash">
+<p class="sub" id="today"></p><h3>What needs your attention</h3><div class="work" id="work"></div>
+<h3>Records at a glance</h3><p class="sub">Numbers update by themselves. Tap any row to see those employees.</p><div class="groups" id="groups"></div>
+</section>
+
+<section class="view" id="v-emp"><h3>Employee records</h3>
+<div class="bar"><input id="q" type="search" placeholder="Search by name or position" aria-label="Search employees"><button class="btn" id="add">+ Add employee</button></div>
+<div class="chips" id="chips"></div>
+<div class="tw"><table><thead><tr><th>Employee</th><th>Status</th><th>Age</th><th>Years in service</th><th>Next step increase</th><th>201 file</th><th>License</th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+
+<section class="view" id="v-cal" aria-labelledby="cal-title">
+<h3 id="cal-title">Calendar</h3>
+<div class="cal-months" id="cal-months" role="group" aria-label="Jump to month"></div>
+<div class="cal-panel">
+  <div class="cal-toolbar">
+    <h4 id="cal-period" aria-live="polite"></h4>
+    <div class="cal-controls" role="group" aria-label="Calendar navigation">
+      <button type="button" class="btn alt" id="cal-prev" aria-label="Previous month">‹</button>
+      <button type="button" class="btn alt" id="cal-today">Today</button>
+      <button type="button" class="btn alt" id="cal-next" aria-label="Next month">›</button>
+    </div>
+  </div>
+  <table class="cal-table" aria-labelledby="cal-period">
+    <thead><tr>
+      <th scope="col"><abbr title="Sunday">Sun</abbr></th><th scope="col"><abbr title="Monday">Mon</abbr></th>
+      <th scope="col"><abbr title="Tuesday">Tue</abbr></th><th scope="col"><abbr title="Wednesday">Wed</abbr></th>
+      <th scope="col"><abbr title="Thursday">Thu</abbr></th><th scope="col"><abbr title="Friday">Fri</abbr></th>
+      <th scope="col"><abbr title="Saturday">Sat</abbr></th>
+    </tr></thead>
+    <tbody id="cal-days"></tbody>
+  </table>
+</div>
+</section>
+
+<section class="view" id="v-nosi"><h3>Notice of Step Increment (NOSI)</h3>
+<p class="sub">Permanent staff become eligible 3 years after their last step date. Dates and new salary are worked out for you.</p>
+<div class="groups" id="nosiSum" style="margin-bottom:18px"></div>
+<div class="tw"><table><thead><tr><th>Employee</th><th>Now</th><th>Last step date</th><th>Eligible on</th><th>New salary (est.)</th><th>Progress</th><th></th></tr></thead><tbody id="nosiRows"></tbody></table></div>
+</section>
+
+<section class="view" id="v-forms"><h3>Forms &amp; printing</h3>
+<p class="sub noprint">Pick a form, choose the employee, check the preview, print. The school name, logos and signatories fill in automatically.</p>
+<div class="forms noprint" id="forms"></div>
+<div class="split"><div class="box noprint"><h3>Certificate of Employment</h3>
+<label class="fld">Employee<select class="in" id="coeEmp"></select></label>
+<label class="fld">Date issued<input class="in" type="date" id="coeDate"></label>
+<label class="fld">Purpose<input class="in" id="coePur" value="loan application"></label>
+<button class="btn" onclick="print()" style="width:100%">Print certificate</button></div>
+<div class="doc" id="coe"></div></div>
+</section>
+
+<section class="view" id="v-rep"><h3>Printable reports</h3><p class="sub noprint">Pick a report. People who need attention are marked YES. Print the list as is, or show everyone.</p><div class="chips noprint" id="rChips"></div><div id="rBody"></div></section>
+<section class="view" id="v-logs"><h3>Logs</h3><div class="chips" id="lChips"></div><div id="lBody"></div></section>
+<section class="view" id="v-prop"><h3>Property &amp; inventory</h3><p class="sub noprint">One place for supplies, books, equipment and buildings. Totals, balances, variances and form numbers are worked out for you.</p><div class="chips noprint" id="pMods"></div><div class="chips noprint" id="pTabs"></div><div id="pBody"></div></section>
+<section class="view" id="v-set"><h3>School settings</h3><p class="sub">Type once here. Every form, header and printout uses it.</p>
+<div class="box" style="max-width:640px">
+<label class="fld">School name<input class="in" id="fName" value="Matatag Elementary School"></label>
+<label class="fld">Schools Division Office<input class="in" id="fSdo" value="Schools Division Office Albay"></label>
+<label class="fld">School head (signs forms)<input class="in" id="fHead" value="Elena R. Fernandez, PhD"></label>
+<label class="fld">Administrative officer<input class="in" id="fAo" value="Christian B. Ramuyan"></label><label class="fld">School ID<input class="in" id="fId"></label><label class="fld">Disbursing officer<input class="in" id="fDo"></label><label class="fld">Inventory committee chair<input class="in" id="fIc"></label><label class="fld">Approved by (Schools Division Superintendent)<input class="in" id="fSds"></label><label class="fld">Verified by (COA auditor)<input class="in" id="fAud"></label>
+<label class="fld">Reference date (use a fixed date to test)<input class="in" type="date" id="fRef"></label><label class="fld">Reporting year<input class="in" type="number" id="fYear"></label><label class="fld">Prepared by<input class="in" id="fPrep" value="Personnel / HR Officer"></label>
+<label class="fld">Logos<input class="in" type="file" accept="image/*"></label>
+<button class="btn" onclick="toast('Saved. Headers and forms are updated.')">Save settings</button></div>
+</section>
+</main></div>
+
+<dialog id="dlg"><h3>Add employee</h3>
+<div class="row2">
+<label class="fld">Full name<input class="in" id="aName" placeholder="Juan A. Dela Cruz"></label>
+<label class="fld">Position<input class="in" id="aPos" placeholder="Teacher I"></label>
+<label class="fld">Classification<select class="in" id="aCls"><option>Teaching</option><option>Teaching Related</option><option>NTP</option></select></label>
+<label class="fld">Employment status<select class="in" id="aSt"><option>Permanent</option><option>Substitute</option><option>Job Order</option><option>COS</option></select></label>
+<label class="fld">Birth date<input class="in" type="date" id="aDob" value="1990-01-15"></label>
+<label class="fld">Date hired<input class="in" type="date" id="aHire" value="2018-06-01"></label>
+<label class="fld">Last step date<input class="in" type="date" id="aStep" value="2024-06-01"></label>
+<label class="fld">Monthly salary (₱)<input class="in" type="number" id="aSal" value="30000"></label></div>
+<div class="row2"><label class="fld">Employee ID (must be unique)<input class="in" id="aId"></label><label class="fld">PRC license expiry (if required)<input class="in" type="date" id="aLic"></label></div><div class="calc" id="aCalc"></div>
+<div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn alt" id="aCancel">Cancel</button><button class="btn" id="aSave">Save employee</button></div></dialog>
+<dialog id="dE" style="max-width:700px"></dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s),T=new Date();T.setHours(0,0,0,0);let Y=T.getFullYear();const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const addM=(d,m)=>{const x=new Date(d);x.setMonth(x.getMonth()+m);return x};
+const mBetween=(a,b)=>(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth()-(b.getDate()<a.getDate()?1:0);
+const fd=d=>d.toLocaleDateString("en-PH",{month:"short",day:"numeric",year:"numeric"});
+const peso=n=>"₱"+Math.round(n).toLocaleString("en-PH");
+const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("on"),2600)};
+const DOCS=[
+  "Appointment Papers (CSC Form 33)",
+  "Assumption to Duty",
+  "Oath of Office",
+  "Personal Data Sheet (PDS)",
+  "Position Description Form (PDF)",
+  "Certificate of Eligibility / PRC License",
+  "Designation Orders",
+  "SALN",
+  "NOSA / NOSI",
+  "Medical Certificate (CSC Form 211)",
+  "NBI Clearance",
+  "Diploma and Transcript of Records",
+  "Marriage Certificate",
+  "Certificate of Leave Balances",
+  "Property and Money Accountability Clearance",
+  "Commendations and Awards",
+  "Disciplinary Action Records",
+  "Contract of Service",
+  "Service Record",
+  "IPCRF",
+  "Other 201 Documents"
+];
+
+// Order of the checklist items represented by each sample employee's completion count.
+const seedDocGroups=[
+  ["Personal Data Sheet (PDS)"],["Appointment Papers (CSC Form 33)"],["Service Record"],
+  ["Diploma and Transcript of Records"],["Certificate of Eligibility / PRC License"],["SALN"],
+  ["IPCRF"],["NBI Clearance"],["Oath of Office","Assumption to Duty"],["Other 201 Documents"]
+];
+
+// name,pos,class,status,age,hiredYearsAgo,SG-step,months until step eligible,salary,license months left,201 groups completed,NOSI progress
+const seed=[
+["Maria L. Dela Cruz","Teacher III","Teaching","Permanent",48,20,"16-4",1,41000,18,10,"On-process"],
+["Jose R. Santos","Master Teacher I","Teaching","Permanent",55,30,"18-3",6,47000,30,10,"Not filed"],
+["Ana P. Reyes","Teacher I","Teaching","Permanent",29,4,"11-2",20,30000,1,10,"Not filed"],
+["Ramon B. Villanueva","Administrative Assistant II","NTP","Permanent",64,33,"8-8",9,19500,null,10,"Not filed"],
+["Cecilia M. Ocampo","Teacher II","Teaching","Permanent",40,15,"13-5",-2,35000,2,10,"Submitted to D.O."],
+["Paolo G. Mendoza","Teacher I","Teaching","Substitute",26,2,"11-1",0,28000,null,6,"Not filed"],
+["Liza T. Gonzales","Guidance Associate","Teaching Related","Permanent",52,25,"15-3",2,38000,null,10,"Not filed"],
+["Eduardo C. Bautista","Teacher III","Teaching","Permanent",62,38,"17-8",11,44000,9,9,"Not filed"],
+["Grace A. Navarro","Teacher II","Teaching","Permanent",36,9,"13-3",0,34000,14,10,"Adjusted in payslip"],
+["Mark A. Salazar","Utility Worker","NTP","Job Order",31,1,"-",0,14000,null,7,"Not filed"]];
+const mk=o=>{o.docs=o.docs||DOCS.map(()=>"Pending");Object.defineProperty(o,"chk",{get(){return this.docs.filter(d=>d!="Pending").length}});return o};
+const E=seed.map((s,i)=>{
+  const filed=seedDocGroups.slice(0,s[10]).flat();
+  return mk({id:"EMP-"+String(i+1).padStart(3,"0"),name:s[0],pos:s[1],cls:s[2],st:s[3],dob:addM(T,-s[4]*12-3),hired:new Date(Y-s[5],5,10),sg:s[6],stepDate:addM(T,s[7]-36),sal:s[8],lic:s[9]==null?null:addM(T,s[9]),docs:DOCS.map(d=>filed.includes(d)?"Complete":"Pending"),nosi:s[11],rev:null,rem:""});
+});
+E.push(mk({id:"EMP-011",name:"Osterlean",pos:"",cls:"",st:"",dob:null,hired:null,sg:"",stepDate:null,sal:null,lic:null,nosi:"Not filed",rev:null,rem:""}));
+const complete201=e=>e.chk===DOCS.length;
+const percent201=e=>Math.round(100*e.chk/DOCS.length);
+// ---- auto calculations ----
+const age=e=>e.dob?Math.floor(mBetween(e.dob,T)/12):"–";
+const yrs=e=>e.hired?Math.floor(mBetween(e.hired,T)/12):"–";
+const eligible=e=>e.st=="Permanent"?addM(e.stepDate,36):null;
+const nM=e=>{const d=eligible(e);return d?mBetween(T,d)+(d<T?-0:0):null};
+const retire=e=>e.dob?addM(e.dob,780):null;
+const rM=e=>e.dob?mBetween(T,retire(e)):Infinity;
+const loy=e=>{if(!e.hired)return -1;const a=Y-e.hired.getFullYear();return a>=10&&a%5==0?0:(a+1>=10&&(a+1)%5==0?1:-1)};
+const licM=e=>e.lic?mBetween(T,e.lic):null;
+const newSal=e=>e.sal*1.03;
+const F={all:["All staff",e=>1],t:["Teaching",e=>e.cls=="Teaching"],tr:["Teaching related",e=>e.cls=="Teaching Related"],n:["Non-teaching",e=>e.cls=="NTP"],
+over:["Step date overdue",e=>eligible(e)&&eligible(e)<T],n1:["Step increase ≤ 1 month",e=>eligible(e)&&eligible(e)>=T&&nM(e)<=1],n2:["≤ 2 months",e=>eligible(e)&&eligible(e)>=T&&nM(e)<=2],ny:["Within the year",e=>eligible(e)&&eligible(e)>=T&&nM(e)<=12],
+l0:["Loyalty "+Y,e=>loy(e)==0],l1:["Loyalty "+(Y+1),e=>loy(e)==1],r1:["Retiring ≤ 1 yr",e=>rM(e)<=12],r2:["≤ 2 yrs",e=>rM(e)<=24],r3:["≤ 3 yrs",e=>rM(e)<=36],
+c1:["License ≤ 1 month",e=>licM(e)!=null&&licM(e)<=1],c2:["License ≤ 2 months",e=>licM(e)!=null&&licM(e)<=2],inc:["Incomplete 201",e=>!complete201(e)],exp:["License expired",e=>e.lic&&e.lic<T],pr:["Past retirement date",e=>e.dob&&retire(e)<T],upd:["Step increase updated",e=>e.nosi=="Adjusted in payslip"]};
+const cnt=k=>E.filter(F[k][1]).length;
+let cur="all";
+function groups(){const G=[["Employment status",[["Permanent",e=>e.st=="Permanent"],["Substitute",e=>e.st=="Substitute"],["Job Order",e=>e.st=="Job Order"],["COS",e=>e.st=="COS"]]],
+["Classification",[["t"],["tr"],["n"]]],["201 file status",[["Complete",complete201],["inc"]]],["Loyalty awards",[["l0"],["l1"]]],
+["Step increment (NOSI)",[["over"],["n1"],["n2"],["ny"]]],["Retirees",[["r1"],["r2"],["r3"]]],["License renewal",[["c1"],["c2"]]]];
+$("#groups").innerHTML=G.map(([t,rs])=>`<div class="g"><h4>${t}</h4>${rs.map(r=>{const f=r[1]?r[1]:F[r[0]][1],l=r[1]?r[0]:F[r[0]][0],key=r[1]?"":r[0];
+return `<button class="r" data-k="${key}" data-l="${l}"><span>${l}</span><b>${E.filter(f).length}</b></button>`}).join("")}</div>`).join("");
+document.querySelectorAll(".g .r").forEach(b=>b.onclick=()=>{go("emp");setF(b.dataset.k||"all")});}
+function work(){const W=[];const o=cnt("over");if(o)W.push(["bad",o,"Step increment date has passed","Update the last step date, then file the NOSI","over"]);
+const a=cnt("n2")-0;if(a)W.push(["",a,"Step increases due within 2 months","Prepare the NOSI forms early","n2"]);
+if(cnt("c2"))W.push(["",cnt("c2"),"Teacher licenses expiring within 2 months","Remind them to renew","c2"]);
+if(cnt("inc"))W.push(["",cnt("inc"),"Employees with an incomplete 201 file","Open the checklist and see what is missing","inc"]);
+if(cnt("l0"))W.push(["ok",cnt("l0"),"Qualified for Loyalty Award this year","Prepare the list for the division office","l0"]);
+if(cnt("r1"))W.push(["",cnt("r1"),"Retiring within a year","Start the retirement papers","r1"]);
+$("#work").innerHTML=W.map(w=>`<div class="w ${w[0]}"><b class="n">${w[1]}</b><div class="t"><b>${w[2]}</b><small>${w[3]}</small></div><button class="btn alt" data-k="${w[4]}">Show</button></div>`).join("");
+document.querySelectorAll("#work button").forEach(b=>b.onclick=()=>{go("emp");setF(b.dataset.k)})}
+function chips(){$("#chips").innerHTML=Object.keys(F).map(k=>`<button class="chip ${k==cur?"on":""}" data-k="${k}">${F[k][0]} (${cnt(k)})</button>`).join("");
+document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>setF(b.dataset.k))}
+const setF=k=>{cur=k;chips();rows()};
+function stepTag(e){const d=eligible(e);if(!d)return '<span class="tag">Not applicable</span>';const m=nM(e);
+return `${fd(d)}<small>${d<T?'<span class="tag b">Overdue – update date</span>':m<=1?'<span class="tag w">Due this month</span>':m<=12?`<span class="tag w">In ${m} months</span>`:"In "+m+" months"}</small>`}
+function rows(){const q=$("#q").value.toLowerCase();const L=E.filter(F[cur][1]).filter(e=>(e.name+e.pos).toLowerCase().includes(q));
+$("#rows").innerHTML=L.map(e=>{const l=licM(e);return `<tr><td><button class="lnk" onclick="openE(${E.indexOf(e)})">${e.name}</button><small>${[e.id,e.pos,e.cls].filter(Boolean).join(" · ")}${pend(e)?` <span class="tag w">${pend(e)} property item(s)</span>`:""}</small></td><td><span class="tag ${e.st=="Permanent"?"g":""}">${e.st||"–"}</span></td><td>${age(e)}${e.dob?`<small>Retires ${fd(retire(e))}</small>`:""}</td><td>${yrs(e)}${e.hired?`<small>Hired ${fd(e.hired)}</small>`:""}</td><td>${stepTag(e)}</td>
+<td><span class="pg ${complete201(e)?"":"part"}"><i style="width:${percent201(e)}%"></i></span> ${e.chk}/${DOCS.length}</td><td>${e.lic?fd(e.lic)+(l<=2?`<small><span class="tag w">Renew soon</span></small>`:""):"–"}</td></tr>`}).join("")||'<tr><td colspan="7">No employees match. Try another filter.</td></tr>'}
+const NS=["Not filed","On-process","Submitted to D.O.","Adjusted in payslip"];
+function nosi(){const P=E.filter(e=>e.st=="Permanent"&&nM(e)<=12).sort((a,b)=>eligible(a)-eligible(b));
+$("#nosiSum").innerHTML=`<div class="g"><h4>Where each NOSI stands</h4>${NS.map(s=>`<div class="r" style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--ln)"><span>${s}</span><b>${P.filter(e=>e.nosi==s).length}</b></div>`).join("")}</div>`;
+$("#nosiRows").innerHTML=P.map((e,i)=>`<tr><td><b>${e.name}</b><small>${e.pos}</small></td><td>SG ${e.sg.replace("-"," step ")}<small>${peso(e.sal)}</small></td><td>${fd(e.stepDate)}</td><td>${stepTag(e)}</td><td><b>${peso(newSal(e))}</b><small>+${peso(newSal(e)-e.sal)} a month</small></td>
+<td><select class="in" data-i="${E.indexOf(e)}">${NS.map(s=>`<option ${s==e.nosi?"selected":""}>${s}</option>`).join("")}</select></td><td><button class="btn alt" onclick="toast('Opens the printable NOSI for ${e.name.split(" ")[0]}')">Print NOSI</button></td></tr>`).join("");
+document.querySelectorAll("#nosiRows select").forEach(s=>s.onchange=()=>{E[s.dataset.i].nosi=s.value;nosi();toast("Status saved")})}
+const FM=[["Personnel requests",["Service Record","Leave Form (CSC Form 6)","Authority to Travel","Certificate of Employment","Locator Slip","Request for Service Credit / COC","Certificate of Appearance","4Ps Certification"]],
+["Maternity leave",["CSC Medical Certificate","School Level Clearance"]],["Financial",["Modification Advice","Waiver of Responsibility","Advice of Checks Issued","Schedule of Funds"]],
+["Division reports",["Transmittal Form","Total Personnel Report","Physical Count of PPE"]],["Retirement",["District Level Clearance","Pendency / Non-Pendency","SALN"]]];
+$("#forms").innerHTML=FM.map(([h,l])=>`<h4>${h}</h4>`+l.map(f=>`<button class="fb ${f=="Certificate of Employment"?"live":""}">${f}</button>`).join("")).join("");
+document.querySelectorAll(".fb:not(.live)").forEach(b=>b.onclick=()=>toast("Same steps: pick employee, check preview, print"));
+$("#coeEmp").innerHTML=E.map((e,i)=>`<option value="${i}">${e.name}</option>`).join("");$("#coeDate").value=iso(T);
+function coe(){const e=E[$("#coeEmp").value],s=$("#fName").value,d=new Date($("#coeDate").value+"T00:00");
+if(!e?.hired){$("#coe").textContent="Employment details are needed to prepare this certificate.";return}
+$("#coe").innerHTML=`<div class="lh">Republic of the Philippines<br><b>Department of Education</b><br>Region V (Bicol) · ${$("#fSdo").value}<br><b>${s.toUpperCase()}</b></div><h2>CERTIFICATE OF EMPLOYMENT</h2>
+<p>TO WHOM IT MAY CONCERN:</p><p style="text-indent:40px">This is to certify that <b>${e.name.toUpperCase()}</b> is employed at ${s} as <b>${e.pos}</b> under <b>${e.st}</b> status since <b>${fd(e.hired)}</b>, with <b>${yrs(e)} year(s)</b> of service. The monthly basic salary is <b>${peso(e.sal)}</b>.</p>
+<p style="text-indent:40px">This certification is issued on ${fd(d)} upon request for <b>${$("#coePur").value}</b>.</p><div class="sig"><b>${$("#fHead").value.toUpperCase()}</b>School Head</div>`}
+["#coeEmp","#coeDate","#coePur","#fName","#fSdo","#fHead"].forEach(s=>$(s).oninput=()=>{coe();$("#sName").textContent=$("#sName2").textContent=$("#fName").value;$("#sSdo").textContent="Department of Education · Region V (Bicol) · "+$("#fSdo").value});
+// add employee dialog with live calc
+function aCalc(){const dob=new Date($("#aDob").value),h=new Date($("#aHire").value),s=new Date($("#aStep").value);if(isNaN(dob)||isNaN(h)||isNaN(s))return;
+$("#aCalc").innerHTML=`Worked out automatically: age <b>${Math.floor(mBetween(dob,T)/12)}</b> · <b>${Math.floor(mBetween(h,T)/12)}</b> years in service · next step increase <b>${fd(addM(s,36))}</b> · retires <b>${fd(addM(dob,780))}</b>`}
+["aDob","aHire","aStep"].forEach(i=>$("#"+i).oninput=aCalc);
+$("#add").onclick=()=>{$("#aId").value="EMP-"+String(E.length+1).padStart(3,"0");aCalc();$("#dlg").showModal()};$("#aCancel").onclick=()=>$("#dlg").close();
+$("#aSave").onclick=()=>{const n=$("#aName").value.trim();if(!n){toast("Please type the employee’s name");$("#aName").focus();return}
+if(E.some(x=>x.id==$("#aId").value)||!$("#aId").value){toast("Employee ID is empty or already used");return}E.unshift(mk({id:$("#aId").value,rev:null,rem:"",name:n,pos:$("#aPos").value||"Teacher I",cls:$("#aCls").value,st:$("#aSt").value,dob:new Date($("#aDob").value),hired:new Date($("#aHire").value),sg:"11-1",stepDate:new Date($("#aStep").value),sal:+$("#aSal").value,lic:$("#aLic").value?new Date($("#aLic").value+"T00:00"):null,nosi:"Not filed"}));
+$("#dlg").close();refresh();toast("Employee added. Dashboard updated.")};
+/* ---- 201 hub: checklist, reports, logs, settings ---- */
+const st201=e=>e.chk===0?"Not Started":complete201(e)?"Complete":"Incomplete";
+const nosiAl=e=>e.st!="Permanent"?"No date":e.nosi=="Adjusted in payslip"?"Updated":eligible(e)<T?"Overdue":eligible(e)<=addM(T,1)?"Within 1 Month":"Scheduled";
+const retAl=e=>{const r=retire(e);return !r?"No date":r<T?"Past date":r<=addM(T,12)?"Within 1 Year":r<=addM(T,24)?"Within 2 Years":r<=addM(T,36)?"Within 3 Years":"Later"};
+const prcAl=e=>!e.lic?"Not applicable":e.lic<T?"Expired":e.lic<=addM(T,1)?"Exp within 1 Month":e.lic<=addM(T,2)?"Exp within 2 Months":"Active";
+const loyYr=e=>{if(!e.hired)return "–";const h=e.hired.getFullYear();return h+Math.max(10,Math.ceil((Y-h)/5)*5)};
+let ce=0;
+function openE(i){ce=i;dE();if(!$("#dE").open)$("#dE").showModal()}
+function dE(){const e=E[ce];$("#dE").innerHTML=`<h3>${e.name}</h3><p class="sub">${[e.id,e.pos,e.st,e.cls,e.sg&&"SG "+e.sg].filter(Boolean).join(" · ")}</p><div class="calc">Age <b>${age(e)}</b> · <b>${yrs(e)}</b> years in service · 201 file <b>${percent201(e)}%</b> (${st201(e)}) · Step increase: <b>${nosiAl(e)}</b> · Retirement: <b>${retAl(e)}</b> · License: <b>${prcAl(e)}</b></div>
+${propBlock(e)}<table style="min-width:0"><thead><tr><th>201 document</th><th>Status (N/A counts as done)</th></tr></thead><tbody>${DOCS.map((d,k)=>`<tr><td>${d}</td><td><select class="in" aria-label="${d}" onchange="E[ce].docs[${k}]=this.value;dE();refresh()">${["Complete","Pending","N/A"].map(s=>`<option ${s==e.docs[k]?"selected":""}>${s}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table>
+<div class="row2" style="margin-top:12px"><label class="fld">Last review date<input class="in" type="date" value="${e.rev?iso(e.rev):""}" onchange="E[ce].rev=this.value?new Date(this.value+'T00:00'):null"></label><label class="fld">Missing documents / remarks<input class="in" value="${e.rem||""}" onchange="E[ce].rem=this.value"></label></div><p style="font-size:14px">Prepared by: ${$("#fPrep").value} · Date checked: ${fd(T)}</p>
+<div class="noprint" style="display:flex;gap:10px;justify-content:flex-end"><button class="btn alt" onclick="document.body.classList.add('pe');print();document.body.classList.remove('pe')">Print this 201</button><button class="btn" onclick="$('#dE').close()">Done</button></div>`}
+const RP={"201 completeness":{d:["201 file date",e=>e.rev],a:["201 file status",st201],i:a=>a!="Complete"},"NOSI / step update":{d:["NOSI due date",e=>eligible(e)],a:["NOSI alert",nosiAl],i:a=>a=="Overdue"||a=="Within 1 Month"},"Loyalty award":{d:["Eligibility date",e=>e.hired?new Date(loyYr(e),e.hired.getMonth(),e.hired.getDate()):null],a:["Loyalty year",loyYr],i:a=>a==Y||a==Y+1},"Retirement":{d:["Retirement date",retire],a:["Retirement alert",retAl],i:a=>/Within/.test(a)},"License renewal":{d:["PRC expiry",e=>e.lic],a:["PRC monitoring",prcAl],i:a=>/Expired|Exp within/.test(a)}};
+let rk="201 completeness",ronly=true;
+function repRender(){const R=RP[rk];$("#rChips").innerHTML=Object.keys(RP).map(k=>`<button class="chip ${k==rk?"on":""}" onclick="rk='${k}';repRender()">${k}</button>`).join("");
+const A=E.map(e=>({e,a:R.a[1](e)})).map(x=>({...x,inc:R.i(x.a)})),n=A.filter(x=>x.inc).length,L=ronly?A.filter(x=>x.inc):A;
+$("#rBody").innerHTML=`<div class="box" style="margin-bottom:14px"><b>${rk} report</b> · ${$("#fName").value} · ${$("#fSdo").value}<br>As of ${fd(T)} · Reporting year ${Y} · Prepared by ${$("#fPrep").value}<br><b>Employees requiring attention: ${n}</b></div><div class="bar noprint"><button class="btn alt" onclick="ronly=!ronly;repRender()">${ronly?"Show everyone":"Show only YES"}</button><button class="btn" onclick="print()">Print report</button></div>`+
+tbl(["Include","ID","Name","Status","Class",R.d[0],R.a[0],"201 file","SG","Remarks"],L.map(x=>{const d=R.d[1](x.e);return `<tr><td>${x.inc?'<span class="tag b">YES</span>':""}</td><td>${x.e.id}</td><td><b>${x.e.name}</b></td><td>${x.e.st}</td><td>${x.e.cls}</td><td>${d?fd(d):"–"}</td><td>${x.a}</td><td>${st201(x.e)}</td><td>${x.e.sg}</td><td>${x.e.rem||""}${pend(x.e)?` <span class="tag b">${pend(x.e)} property item(s) to return</span>`:""}</td></tr>`}).join(""))}
+const CL=[],SL=[];let lt="Concern logs";
+function logRender(){$("#lChips").innerHTML=["Concern logs","Salary changes"].map(k=>`<button class="chip ${k==lt?"on":""}" onclick="lt='${k}';logRender()">${k}</button>`).join("");const op=a=>a.map(x=>`<option>${x}</option>`).join("");
+if(lt=="Concern logs")$("#lBody").innerHTML=`<div class="box"><h3>Record a concern</h3><div class="row2"><label class="fld">Employee<select class="in" id="cE">${E.map((e,i)=>`<option value="${i}">${e.name}</option>`).join("")}</select></label><label class="fld">Category<select class="in" id="cC">${op(["201 Documents","PRC License","NOSI","Loyalty","Retirement","Salary","Other"])}</select></label><label class="fld">Priority<select class="in" id="cP">${op(["Low","Medium","High","Urgent"])}</select></label><label class="fld">Assigned to<input class="in" id="cA"></label></div><label class="fld">Details<input class="in" id="cD"></label><button class="btn" onclick="if(!$('#cD').value){toast('Please describe the concern');return}CL.unshift({id:'CL-'+String(CL.length+1).padStart(3,'0'),d:new Date(T),e:E[$('#cE').value],c:$('#cC').value,p:$('#cP').value,a:$('#cA').value,t:$('#cD').value,s:'Open',r:null});logRender();toast('Concern logged')">Save concern</button></div><br>`+tbl(["ID","Date","Employee","Category","Details","Priority","Status","Resolved on"],CL.map((c,i)=>`<tr><td>${c.id}</td><td>${fd(c.d)}</td><td>${c.e.name}</td><td>${c.c}</td><td>${c.t}</td><td><span class="tag ${c.p=="Urgent"||c.p=="High"?"b":"w"}">${c.p}</span></td><td><select class="in" onchange="CL[${i}].s=this.value;CL[${i}].r=/Resolved|Closed/.test(this.value)?new Date(T):null;logRender()">${["Open","In Progress","Resolved","Closed"].map(s=>`<option ${s==c.s?"selected":""}>${s}</option>`).join("")}</select></td><td>${c.r?fd(c.r):"–"}</td></tr>`).join(""));
+else $("#lBody").innerHTML=`<div class="box"><h3>Record a salary grade change</h3><p class="sub">Saving also updates the employee’s current grade, so you only type it once.</p><div class="row2"><label class="fld">Employee<select class="in" id="sE">${E.map((e,i)=>`<option value="${i}">${e.name} (now ${e.sg})</option>`).join("")}</select></label><label class="fld">New grade and step (e.g. 16-5)<input class="in" id="sN"></label><label class="fld">Effective date<input class="in" type="date" id="sD" value="${iso(T)}"></label><label class="fld">Reference / order no.<input class="in" id="sR"></label></div><label class="fld">Reason<input class="in" id="sW" placeholder="Step increment, promotion, reclassification"></label><button class="btn" onclick="const e=E[$('#sE').value],n=$('#sN').value.trim();if(!n){toast('Type the new grade first');return}SL.unshift({id:'SC-'+String(SL.length+1).padStart(3,'0'),e,pv:e.sg,nw:n,d:$('#sD').value,w:$('#sW').value,r:$('#sR').value,by:$('#fPrep').value});e.sg=n;logRender();refresh();toast('Saved. Current grade updated.')">Save change</button></div><br>`+tbl(["ID","Employee","Previous","New","Effective","Reason","Reference","Updated by"],SL.map(s=>`<tr><td>${s.id}</td><td>${s.e.name}</td><td>${s.pv}</td><td><b>${s.nw}</b></td><td>${s.d}</td><td>${s.w}</td><td>${s.r}</td><td>${s.by}</td></tr>`).join(""))}
+$("#fRef").value=iso(T);$("#fYear").value=Y;
+["#fRef","#fYear"].forEach(s=>$(s).onchange=()=>{const v=$("#fRef").value;if(v)T.setTime(new Date(v+"T00:00").getTime());Y=+$("#fYear").value||Y;$("#today").textContent="Reference date: "+fd(T)+". Everything is calculated from this date.";refresh();pRender();repRender();toast("Dates updated. Everything recalculated.")});
+/* ---- Property & inventory ---- */
+const MODS=[["Office Supplies","c"],["Learning Resources","e"],["ICT Equipment","e"],["Science and Math","e"],["Sports Equipment","e"],["TLE Equipment","e"],["SHS Equipment","e"],["Office Equipment","e"],["WINS / Clinic","e"],["DRRM","e"],["School Building","p"],["Furniture and Fixtures","e"],["Donation","e"],["Canteen Property","e"],["Equipment over ₱50K","p"]];
+const PT={c:["Dashboard","Database","RIS","RSMI","Stock Card","RPCI"],e:["Dashboard","Database","ICS","RPCI","IIRUP","Waste Materials","Returned","Issued summary"],p:["Dashboard","Database","PAR","RPCPPE","IIRUP","Waste Materials","Returned","Issued summary"]};
+const DB=MODS.map(()=>[]),ISS=[],LOG=[],WM=[{n:"",q:1,u:"pcs",or:"",a:0}];let pm=-1,pt="Dashboard",pRows=[{i:0,q:1}],pq="",tagsOn=false,scI=0,pRec=0;
+[[0,[["OS-001","Acetate","Supplies","roll",20,6,45],["OS-002","Ballpen, black","Supplies","box",50,8,120],["OS-003","Bond paper A4","Supplies","ream",100,4,260],["OS-004","Battery, AAA","Supplies","pack",30,12,85]]],
+[1,[["B-1","English","Textbooks","cps",28,28,58.62],["B-2","TLE: Aspirations to Future Career Paths","Textbooks","cps",107,107,110.28],["TM-2","TLE Teacher’s Manual","Teacher’s Manual","cps",2,2,72.5]]],
+[2,[["ICT-001","Laptop, 14 inch","Laptop","unit",10,10,38000],["ICT-002","Printer, inkjet","Printer","unit",3,3,7800],["ICT-003","Smart TV, 55 inch","Display","unit",1,1,52000]]],
+[3,[["25-06-0001","Balance, top-loading, electronic","Lab","pcs",3,3,3782.1],["25-06-0002","Beaker, borosilicate, 250 mL","Lab","pcs",20,20,26.7],["25-06-0004","Burette, 10 mL","Lab","pcs",5,5,359.11]]]].forEach(([m,a])=>a.forEach(r=>DB[m].push({code:r[0],name:r[1],cat:r[2],unit:r[3],init:r[4],cur:r[5],price:r[6],hand:null,cond:"Serviceable",disp:"Sale"})));
+const val=i=>i.cur*i.price,kp=(t,v)=>`<div class="g"><h4>${t}</h4><div class="kp">${v}</div></div>`;
+const cls=c=>c>=50000?["PPE: use PAR","b"]:c>5000?["High-value semi-expendable","w"]:["Low-value semi-expendable","g"];
+const tbl=(h,r)=>`<div class="tw"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${r||`<tr><td colspan="${h.length}">Nothing here yet.</td></tr>`}</tbody></table></div>`;
+const sgn=()=>`<div class="sg"><div><b>${$("#fAo").value}</b>Property Custodian<br>Certified correct</div><div><b>${$("#fHead").value}</b>School Head<br>Approved</div><div><b>${$("#fAud").value||"COA Auditor"}</b>Verified</div></div>`;
+const log=s=>LOG.unshift({d:new Date(),m:pm,s});
+const isK=()=>MODS[pm][1],fnm=()=>isK()=="c"?"RIS":isK()=="p"?"PAR":"ICS";
+const emp=()=>`<option>${E.map(e=>e.name).join("</option><option>")}</option>`;
+const noFor=()=>fnm()+"-"+Y+"-"+String(new Set(ISS.filter(x=>x.mod==pm).map(x=>x.no)).size+1).padStart(3,"0");
+function pRender(){const m=pm<0?null:MODS[pm];$("#pMods").innerHTML=`<div class="box" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b style="font-size:20px">${m?m[0]:"Property overview"}</b><small style="display:block;color:var(--mute)">${m?pt+" \u00b7 "+{c:"Supplies that get used up (RIS)",e:"Equipment handed out with an ICS",p:"Big-ticket property handed out with a PAR"}[m[1]]:"All modules together. Pick a module from the menu on the left."}</small></div><span class="tag">${fd(T)}</span></div>`;$("#pMods").insertAdjacentHTML("beforeend",["Overview",...MODS.map(x=>x[0])].map((n,i)=>`<button class="chip ${i-1==pm?"on":""}" onclick="pGo(${i-1},'Dashboard')">${n}</button>`).join(""));$("#pTabs").innerHTML=pm<0?"":ptabs(pm).map(t=>`<button class="chip ${t==pt?"on":""}" onclick="pt='${t}';pRender()">${tl(pm,t)}</button>`).join("");$("#pBody").innerHTML=pm<0?exec():(V[pt]||V.Dashboard)();navRender()}
+function exec(){const A=DB.flat(),b=MODS.map((m,i)=>[m[0],DB[i].reduce((s,x)=>s+val(x),0)]).filter(x=>x[1]),mx=Math.max(1,...b.map(x=>x[1])),cd=c=>A.filter(x=>x.cond==c).length,iss=new Set(ISS.map(x=>x.code));
+return `<div class="groups">${kp("Units on hand",A.reduce((s,x)=>s+x.cur,0).toLocaleString())}${kp("Inventory value",peso(A.reduce((s,x)=>s+val(x),0)))}${kp("Inventory records",A.length)}${kp("Low or zero balance (5 or fewer)",A.filter(x=>x.cur<=5).length)}</div>
+<div class="groups" style="margin-top:16px"><div class="g"><h4>Value by module</h4>${b.map(x=>`<div style="padding:8px 14px"><div style="display:flex;justify-content:space-between"><span>${x[0]}</span><b>${peso(x[1])}</b></div><span class="pg" style="width:100%"><i style="width:${x[1]/mx*100}%"></i></span></div>`).join("")}</div>
+<div class="g"><h4>Condition of items</h4>${["Serviceable","For repair","Unserviceable"].map(c=>`<div class="r" style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--ln)"><span>${c}</span><b>${cd(c)}</b></div>`).join("")}</div>
+<div class="g"><h4>Accountability</h4><div class="r" style="display:flex;justify-content:space-between;padding:10px 14px"><span>With an accountable person</span><b>${A.filter(x=>iss.has(x.code)).length}</b></div><div class="r" style="display:flex;justify-content:space-between;padding:10px 14px"><span>Not yet issued</span><b>${A.filter(x=>!iss.has(x.code)).length}</b></div></div>
+<div class="g"><h4>Recent entries</h4>${LOG.slice(0,5).map(l=>`<div style="padding:8px 14px;border-bottom:1px solid var(--ln)">${l.s}<small style="display:block;color:var(--mute)">${MODS[l.m][0]} · ${fd(l.d)}</small></div>`).join("")||'<div style="padding:12px 14px">No entries yet. Issue or count something to see it here.</div>'}</div></div>`}
+function pSet(j,k,v){pRows[j][k]=v;pRender()}
+function pSave(){const L=DB[pm],rec=$("#pRec").value,no=noFor();for(const r of pRows){const it=L[r.i]||L[0];if(r.q>it.cur){toast("Not enough stock for "+it.name);return}}
+pRows.forEach(r=>{const it=L[r.i]||L[0];it.cur-=r.q;ISS.push({mod:pm,no,rec,code:it.code,name:it.name,q:r.q,ret:0,cost:it.price,d:new Date()})});log(no+" issued to "+rec);pRows=[{i:0,q:1}];pRender();toast(no+" saved. Stock balances updated.")}
+const V={Dashboard(){const L=DB[pm],go2=t=>`onclick="pt='${t}';pRender()"`,f=fnm();return `<div class="groups">${kp(pm==1?"Book titles":pm==0?"Stock items":pm==10?"Buildings":"Equipment types",L.length)}${kp("Total value",peso(L.reduce((s,x)=>s+val(x),0)))}${kp("Issued",ISS.filter(x=>x.mod==pm).reduce((s,x)=>s+x.q,0))}${kp("Low or out of stock",L.filter(x=>x.cur<=5).length)}${kp("Count variance",peso(L.reduce((s,x)=>s+(x.hand==null?0:Math.abs(x.hand-x.cur)*x.price),0)))}</div>
+<div class="groups" style="margin-top:16px"><div class="g"><h4>Quick actions</h4><button class="r" ${go2(f)}>New ${f}</button><button class="r" ${go2("Database")}>Add a new item</button><button class="r" ${go2(isK()=="p"?"RPCPPE":"RPCI")}>Count stock (physical inventory)</button></div>
+<div class="g"><h4>Form signatories</h4><div style="padding:12px 14px">Property Custodian: <b>${$("#fAo").value}</b><br>Disbursing Officer: <b>${$("#fDo").value||"–"}</b><br>School Head: <b>${$("#fHead").value}</b><br><small>Change these in School settings.</small></div></div>
+<div class="g"><h4>Recent activity</h4>${LOG.filter(l=>l.m==pm).slice(0,4).map(l=>`<div style="padding:8px 14px">${l.s}</div>`).join("")||'<div style="padding:12px 14px">Nothing yet.</div>'}</div></div>`},
+Database(){const L=DB[pm].filter(x=>(x.name+x.code).toLowerCase().includes(pq));
+return `<div class="bar noprint"><button class="btn alt" onclick="toast('Full build: downloads an .xlsx')">Export Excel</button><button class="btn alt" onclick="toast('Full build: downloads a backup CSV')">Export backup CSV</button><button class="btn alt" onclick="toast('Full build: pick an .xlsx to import')">Import Excel</button></div><div class="bar noprint"><input placeholder="Search name or code" value="${pq}" onchange="pq=this.value;pRender()"><button class="btn" style="background:#6b2fa0" onclick="tagsOn=!tagsOn;pRender()">Print all tags</button></div>`+
+tbl(["Code","Name","Category","Unit","Initial","Current","Unit price","Total value","Type",...xc(pm),""],L.map(x=>`<tr><td>${x.code}</td><td><b>${x.name}</b></td><td>${x.cat}</td><td>${x.unit}</td><td>${x.init}</td><td><b>${x.cur}</b>${x.cur<=5?' <span class="tag b">Low</span>':""}</td><td>${peso(x.price)}</td><td>${peso(val(x))}</td><td><span class="tag ${cls(x.price)[1]}">${cls(x.price)[0]}</span></td>${xc(pm).map(c=>`<td><input class="in" style="min-width:120px" value="${(x.ex||{})[c]||""}" onchange="pEx('${x.code}','${c}',this.value)"></td>`).join("")}<td><button class="btn alt" onclick="toast('Tag ready to print')">Tag</button> <button class="btn alt" onclick="DB[pm].splice(DB[pm].indexOf(DB[pm].find(y=>y.code=='${x.code}')),1);pRender()">Delete</button></td></tr>`).join("")+`<tr class="noprint"><td>auto</td><td><input class="in" id="nN" placeholder="New item name"></td><td></td><td><input class="in sm" id="nU" placeholder="unit" value="pcs"></td><td colspan="2"><input class="in sm" id="nQ" type="number" placeholder="qty" value="1"></td><td><input class="in sm" id="nP" type="number" placeholder="price"></td><td colspan="${3+xc(pm).length}"><button class="btn" onclick="pAdd()">+ Add item</button></td></tr>`)+(tagsOn?`<div class="tags">${L.map(x=>`<div class="tagbox"><b>${$("#fName").value}</b><br>Code: ${x.code}<br>${x.name} (${x.cat})<br>Qty: ${x.cur} ${x.unit} · ${peso(x.price)}<br>Accountable: ${$("#fAo").value}<br>Per card ____ On hand ____ Short ____ Over ____</div>`).join("")}</div><p class="noprint"><button class="btn" onclick="print()">Print tags</button></p>`:"")},
+RIS(){return V.ICS()},PAR(){return V.ICS()},
+ICS(){const L=DB[pm],f=fnm();if(!L.length)return'<div class="box">Add an item in Database first.</div>';let tot=0;
+const rows=pRows.map((r,j)=>{const it=L[r.i]||L[0],t=r.q*it.price;tot+=t;return `<tr><td><select class="in" onchange="pSet(${j},'i',+this.value)">${L.map((x,i)=>`<option value="${i}" ${i==r.i?"selected":""}>${x.name} (${x.cur} left)</option>`).join("")}</select></td><td><input class="in sm" type="number" min="1" value="${r.q}" onchange="pSet(${j},'q',+this.value)">${r.q>it.cur?'<small><span class="tag b">Only '+it.cur+' in stock</span></small>':""}</td><td>${it.unit}</td><td>${peso(it.price)}</td><td><b>${peso(t)}</b></td>${f=="RIS"?"":`<td><span class="tag ${cls(it.price)[1]}">${cls(it.price)[0]}</span></td>`}</tr>`}).join("");
+return `<div class="box"><h3>${{RIS:"Requisition and Issue Slip",ICS:"Inventory Custodian Slip",PAR:"Property Acknowledgment Receipt"}[f]} · ${noFor()}</h3><div class="row2"><label class="fld">Issued to (from employee list)<select class="in" id="pRec">${emp()}</select></label><label class="fld">Date<input class="in" type="date" value="${iso(T)}"></label></div>`+tbl(["Item","Quantity","Unit","Unit cost","Total",...(f=="RIS"?[]:["Classification"])],rows)+`<p><b>Grand total: ${peso(tot)}</b></p><div class="noprint" style="display:flex;gap:10px"><button class="btn alt" onclick="pRows.push({i:0,q:1});pRender()">+ Add row</button><button class="btn" onclick="pSave()">Save and issue</button><button class="btn alt" onclick="print()">Print form</button></div>${sgn()}</div>`},
+RSMI(){const m={};ISS.filter(x=>x.mod==pm).forEach(x=>{m[x.code]=m[x.code]||{...x,q:0};m[x.code].q+=x.q});const a=Object.values(m);
+return `<div class="box"><h3>Report of Supplies and Materials Issued</h3><p class="sub">Built from every RIS you save. As of ${fd(T)}.</p>`+tbl(["Stock no.","Item","Quantity issued","Unit cost","Amount"],a.map(x=>`<tr><td>${x.code}</td><td>${x.name}</td><td>${x.q}</td><td>${peso(x.cost)}</td><td>${peso(x.q*x.cost)}</td></tr>`).join(""))+`<p><b>Total: ${peso(a.reduce((s,x)=>s+x.q*x.cost,0))}</b></p><button class="btn noprint" onclick="print()">Print RSMI</button>${sgn()}</div>`},
+"Stock Card"(){const L=DB[pm];if(!L.length)return'<div class="box">No items yet.</div>';const it=L[scI]||L[0];let b=it.init;const rs=ISS.filter(x=>x.code==it.code&&x.mod==pm);
+return `<div class="box"><h3>Stock Card</h3><label class="fld" style="max-width:360px">Item<select class="in" onchange="scI=+this.value;pRender()">${L.map((x,i)=>`<option value="${i}" ${x==it?"selected":""}>${x.name}</option>`).join("")}</select></label><p>Stock no. <b>${it.code}</b> · Unit: ${it.unit} · Re-order point: <b>5</b> ${it.cur<=5?'<span class="tag b">Time to reorder</span>':""}</p>`+tbl(["Date","Reference","Receipt","Issue","Balance"],`<tr><td>Start</td><td>Beginning balance</td><td>${it.init}</td><td></td><td>${b}</td></tr>`+rs.map(x=>{b-=x.q;return `<tr><td>${fd(x.d)}</td><td>${x.no}</td><td></td><td>${x.q}</td><td>${b}</td></tr>`}).join(""))+`</div>`},
+RPCI(){const L=DB[pm],P=isK()=="p";let tv=0;
+return `<div class="box"><h3>Report on the Physical Count of ${pm==10?"School Building":P?"Property, Plant and Equipment":"Inventories"}</h3><p class="sub">As of ${fd(T)} · type what you counted in “On hand”. Differences are worked out for you.${P?"":" Submit to the COA auditor not later than July 31 and January 31."}</p>`+tbl(["Item","Unit","Unit value","Per card","On hand","Short/over qty","Short/over value","Remarks"],L.map(x=>{const h=x.hand==null?x.cur:x.hand,d=h-x.cur;tv+=d*x.price;return `<tr><td>${x.name}</td><td>${x.unit}</td><td>${peso(x.price)}</td><td>${x.cur}</td><td><input class="in sm" type="number" value="${h}" onchange="DB[pm].find(y=>y.code=='${x.code}').hand=+this.value;pRender()"></td><td>${d}</td><td>${peso(d*x.price)}</td><td><span class="tag ${d?"b":"g"}">${d<0?"Shortage":d>0?"Overage":"Matched"}</span></td></tr>`}).join(""))+`<p><b>Net variance: ${peso(tv)}</b></p><button class="btn noprint" onclick="log('Physical count recorded');toast('Count saved');print()">Save and print</button>${sgn()}</div>`},
+RPCPPE(){return V.RPCI()},
+IIRUP(){const L=DB[pm];return `<div class="box"><h3>Inventory and Inspection Report of Unserviceable Property</h3><p class="sub">Mark what is no longer usable and choose how it will be disposed.</p>`+tbl(["Item","Qty","Cost","Condition","Disposal"],L.map(x=>`<tr><td>${x.name}</td><td>${x.cur}</td><td>${peso(val(x))}</td><td><select class="in" onchange="DB[pm].find(y=>y.code=='${x.code}').cond=this.value;pRender()">${["Serviceable","For repair","Unserviceable"].map(c=>`<option ${c==x.cond?"selected":""}>${c}</option>`).join("")}</select></td><td>${x.cond=="Unserviceable"?`<select class="in" onchange="DB[pm].find(y=>y.code=='${x.code}').disp=this.value">${["Sale","Transfer without cost","Destroy","Waste material"].map(c=>`<option ${c==x.disp?"selected":""}>${c}</option>`).join("")}</select>`:"–"}</td></tr>`).join(""))+`<p><b>Unserviceable value: ${peso(L.filter(x=>x.cond=="Unserviceable").reduce((s,x)=>s+val(x),0))}</b></p><button class="btn noprint" onclick="print()">Print IIRUP</button>${sgn()}</div>`},
+"Waste Materials"(){return `<div class="box"><h3>Items for Disposal (Waste Materials Report)</h3>`+tbl(["Item","Qty","Unit","O.R. no.","Amount"],WM.map((w,j)=>`<tr><td><input class="in" value="${w.n}" onchange="WM[${j}].n=this.value"></td><td><input class="in sm" type="number" value="${w.q}" onchange="WM[${j}].q=+this.value"></td><td><input class="in sm" value="${w.u}" onchange="WM[${j}].u=this.value"></td><td><input class="in sm" value="${w.or}" onchange="WM[${j}].or=this.value"></td><td><input class="in sm" type="number" value="${w.a}" onchange="WM[${j}].a=+this.value;pRender()"></td></tr>`).join(""))+`<p><b>Total: ${peso(WM.reduce((s,w)=>s+w.a,0))}</b></p><div class="noprint"><button class="btn alt" onclick="WM.push({n:'',q:1,u:'pcs',or:'',a:0});pRender()">+ Add row</button> <button class="btn" onclick="log('Waste materials report saved');toast('Saved')">Save report</button> <button class="btn alt" onclick="print()">Print</button></div>${sgn()}</div>`},
+Returned(){const O=ISS.filter(x=>x.mod==pm&&x.q>x.ret);if(!O.length)return'<div class="box">Nothing is waiting to be returned. Issue something first.</div>';const o=O[pRec]||O[0];
+return `<div class="box"><h3>Returned items</h3><label class="fld">Issued record<select class="in" onchange="pRec=+this.value;pRender()">${O.map((x,i)=>`<option value="${i}" ${x==o?"selected":""}>${x.no} · ${x.name} · ${x.rec} (${x.q-x.ret} out)</option>`).join("")}</select></label><label class="fld">Quantity returned<input class="in sm" id="rq" type="number" min="1" max="${o.q-o.ret}" value="1"></label><button class="btn" onclick="pReturn(${O.indexOf(o)})">Save return</button></div>`},
+"Issued summary"(){const A=ISS.filter(x=>x.mod==pm),i=A.reduce((s,x)=>s+x.q,0),r=A.reduce((s,x)=>s+x.ret,0);return `<div class="groups">${kp("Total issued",i)}${kp("Total returned",r)}${kp("Still outstanding",i-r)}</div><br>`+tbl(["No.","Date","Issued to","Item","Issued","Returned","Outstanding"],A.map(x=>`<tr><td>${x.no}</td><td>${fd(x.d)}</td><td><button class="lnk" onclick="go('emp');openE(${Math.max(0,E.findIndex(e=>e.name==x.rec))})">${x.rec}</button></td><td>${x.name}</td><td>${x.q}</td><td>${x.ret}</td><td><b>${x.q-x.ret}</b></td></tr>`).join(""))},
+Reports(){const L=DB[pm];return `<div class="box"><h3>Certification (Annex 1) and Property Form No. 1</h3><p class="sub">Consolidated report on deliveries of Science and Mathematics equipment.</p><label class="fld" style="max-width:260px">Delivery Receipt no.<input class="in" placeholder="DR no."></label>`+tbl(["Description","Unit","Qty","Unit cost","Total cost"],L.map(x=>`<tr><td>${x.name}</td><td>${x.unit}</td><td>${x.init}</td><td>${peso(x.price)}</td><td>${peso(x.init*x.price)}</td></tr>`).join(""))+`<p><b>Total amount: ${peso(L.reduce((s,x)=>s+x.init*x.price,0))}</b></p><button class="btn noprint" onclick="print()">Print certification</button>${sgn()}</div>`}};
+const DBN={0:"Database (Masterlist)",1:"Books Database",3:"SME Database",10:"School Building Database"},XD=["Location / office","Serial / model","Est. useful life"],XC={0:[],1:["Grade level","Author / subject"],3:["Location / office","Supplier","Date received","DR no."],10:[],12:["Donor","Date received","COD no."],14:["Property no.","Serial / model","Date acquired","Location / office"]},xc=m=>XC[m]||(MODS[m][1]=="e"?XD:[]),tl=(m,t)=>t=="Database"?(DBN[m]||"Database"):t=="RIS"?"RIS (Requisition Slip)":t=="RSMI"?"RSMI (Issued Supplies)":t=="RPCI"&&m==0?"RPCI (Physical Count)":t=="IIRUP"?"IIRUP (unserviceable)":m==1&&t=="Returned"?"Returned Books":m==1&&t=="Issued summary"?"Issued Books Summary":t;let bI=0;
+function pEx(c,k,v){const it=DB[pm].find(y=>y.code==c);it.ex=it.ex||{};it.ex[k]=v}
+DB[10].push({code:"SB-001",name:"Building 1 · 1-storey 4-classroom",cat:"Classroom building",unit:"bldg",init:1,cur:1,price:2850000,hand:null,cond:"Serviceable",disp:"Sale",ex:{type:"DepEd standard 4-classroom",storeys:"1",rooms:"4",area:"216",yr:"2019",fund:"DepEd",cond:"Good"}},{code:"SB-002",name:"Building 2 · 2-storey 6-classroom",cat:"Classroom building",unit:"bldg",init:1,cur:1,price:6400000,hand:null,cond:"Serviceable",disp:"Sale",ex:{type:"2-storey 6-classroom",storeys:"2",rooms:"6",area:"432",yr:"2012",fund:"LGU / SEF",cond:"Needs minor repair"}});
+V["Building Card"]=()=>{const L=DB[10];if(!L.length)return'<div class="box">Add a building in Database first.</div>';const b=L[bI]||L[0],g=(k,l)=>`<label class="fld">${l}<input class="in" value="${(b.ex||{})[k]||""}" onchange="pEx('${b.code}','${k}',this.value)"></label>`;
+return `<div class="box"><h3>School Building Card</h3><label class="fld" style="max-width:380px">Building<select class="in" onchange="bI=+this.value;pRender()">${L.map((x,i)=>`<option value="${i}" ${x==b?"selected":""}>${x.code} · ${x.name}</option>`).join("")}</select></label><div class="row2">${g("type","Building type / design")}${g("yr","Year completed")}${g("storeys","No. of storeys")}${g("rooms","No. of classrooms")}${g("area","Floor area (sq m)")}${g("fund","Funding source")}${g("lot","Lot / title no.")}${g("cond","Condition (Good, Minor repair, Major repair, Condemn)")}</div><p>Building no. <b>${b.code}</b> · Cost <b>${peso(b.price)}</b></p><button class="btn noprint" onclick="print()">Print card</button>${sgn()}</div>`};
+V["NSBI Reports"]=()=>{const L=DB[10],g=(b,k)=>(b.ex||{})[k]||"–",n=k=>L.reduce((s,b)=>s+(+(b.ex||{})[k]||0),0);
+return `<div class="box"><h3>School Building Inventory Report (NSBI)</h3><p class="sub">One line per building, built from each Building Card. As of ${fd(T)}.</p>`+tbl(["Bldg no.","Description","Type / design","Storeys","Classrooms","Floor area (sq m)","Year","Funding","Condition","Cost"],L.map(b=>`<tr><td>${b.code}</td><td>${b.name}</td><td>${g(b,"type")}</td><td>${g(b,"storeys")}</td><td>${g(b,"rooms")}</td><td>${g(b,"area")}</td><td>${g(b,"yr")}</td><td>${g(b,"fund")}</td><td>${g(b,"cond")}</td><td>${peso(b.price*b.cur)}</td></tr>`).join(""))+`<p><b>Buildings: ${L.length} · Classrooms: ${n("rooms")} · Floor area: ${n("area")} sq m</b></p><button class="btn noprint" onclick="print()">Print NSBI report</button>${sgn()}</div>`};
+const AX=m=>m>=0&&MODS[m][1]!="c"&&m!=1&&m!=10,ax={t:"",d:"",l:""},esc=v=>String(v==null?"":v).replace(/"/g,"&quot;");
+function pF(c,k,v){const it=DB[pm].find(y=>y.code==c);it[k]=(k=="price"||k=="cur")?+v||0:v}
+function pH(c,v){DB[pm].find(y=>y.code==c).hand=v===""?null:+v}
+const DB0=V.Database;V.Database=()=>AX(pm)?AXV():DB0();
+const AXV=()=>{const L=DB[pm],T1=(x,k,ex)=>`<input class="in" style="min-width:110px" value="${esc(ex?(x.ex||{})[k]:x[k])}" onchange="${ex?"pEx":"pF"}('${x.code}','${k}',this.value)">`;
+return `<div class="box"><div style="text-align:center;line-height:1.4"><b style="font-size:20px">${$("#fName").value.toUpperCase()}</b><br><b>INVENTORY COUNT FORM — ANNEX A</b><br>PROPERTY, PLANT AND EQUIPMENT (PPE)</div><div class="row2" style="margin-top:12px"><label class="fld">Teacher name<input class="in" value="${esc(ax.t)}" onchange="ax.t=this.value"></label><label class="fld">Physical inventory date<input class="in" type="date" value="${ax.d||iso(T)}" onchange="ax.d=this.value"></label></div><label class="fld">Location / office<input class="in" value="${esc(ax.l)}" onchange="ax.l=this.value"></label></div><br>`+
+tbl(["Article / Item","Description","New property no. assigned","Old property no.","Unit of measure","Unit value","Quantity per property card","Quantity per physical count","Location / whereabouts","Condition","Remarks",""],L.map(x=>`<tr><td>${T1(x,"name")}</td><td>${T1(x,"desc",1)}</td><td><b>${x.code}</b></td><td>${T1(x,"old",1)}</td><td><input class="in sm" value="${esc(x.unit)}" onchange="pF('${x.code}','unit',this.value)"></td><td><input class="in sm" type="number" value="${x.price}" onchange="pF('${x.code}','price',this.value)"></td><td><input class="in sm" type="number" value="${x.cur}" onchange="pF('${x.code}','cur',this.value)"></td><td><input class="in sm" type="number" value="${x.hand==null?"":x.hand}" onchange="pH('${x.code}',this.value)"></td><td>${T1(x,"loc",1)}</td><td><select class="in" onchange="pF('${x.code}','cond',this.value)">${["Serviceable","For repair","Unserviceable"].map(c=>`<option ${c==x.cond?"selected":""}>${c}</option>`).join("")}</select></td><td>${T1(x,"rem",1)}</td><td class="noprint"><button class="btn alt" onclick="DB[pm].splice(DB[pm].findIndex(y=>y.code=='${x.code}'),1);pRender()">Delete</button></td></tr>`).join(""))+
+`<div class="bar noprint" style="margin-top:14px"><input class="in" id="nN" placeholder="Article / item (e.g. Executive table)"><input class="in sm" id="nU" value="pc"><input class="in sm" id="nQ" type="number" value="1"><input class="in sm" id="nP" type="number" placeholder="Unit value"><button class="btn" onclick="pAdd()">+ Add item</button><button class="btn alt" onclick="print()">Print Annex A</button></div><p class="noprint sub">Leave “Quantity per physical count” empty until you count. Examples: fund source, serial/model or variance notes go in Remarks.</p>`+sgn()};
+function pAdd(){const n=$("#nN").value.trim();if(!n){toast("Type the item name first");return}const q=+$("#nQ").value||0,c=MODS[pm][0].slice(0,3).toUpperCase()+"-"+String(DB[pm].length+1).padStart(3,"0");DB[pm].push({code:c,name:n,cat:"General",unit:$("#nU").value,init:q,cur:q,price:+$("#nP").value||0,hand:null,cond:"Serviceable",disp:"Sale"});log("Added "+n);pRender();toast("Item added with code "+c)}
+function pReturn(k){const o=ISS.filter(x=>x.mod==pm&&x.q>x.ret)[k],q=Math.min(+$("#rq").value||1,o.q-o.ret);o.ret+=q;DB[pm].find(x=>x.code==o.code).cur+=q;log(q+" returned: "+o.name);pRec=0;pRender();toast("Return saved. Stock updated.")}
+[["ICT-001",2,"Maria L. Dela Cruz"],["ICT-002",2,"Ramon B. Villanueva"]].forEach(([c,m,r],i)=>{const it=DB[m].find(x=>x.code==c);it.cur-=1;ISS.push({mod:m,no:"ICS-"+Y+"-00"+(i+1),rec:r,code:c,name:it.name,q:1,ret:0,cost:it.price,d:addM(T,-2)})});
+const PG=[["Supplies and books",[0,1]],["Equipment",[2,3,4,5,6,7,8,9,11]],["Buildings and big items",[10,14]],["Donations and canteen",[12,13]]],nOpen={pers:true,prop:true},ptabs=m=>m==10?["Dashboard","Database","Building Card","NSBI Reports","RPCI","IIRUP","Waste Materials"]:[...PT[MODS[m][1]],...(m==3?["Reports"]:[])];
+const tg=k=>{nOpen[k]=!nOpen[k];navRender()},pend=e=>ISS.filter(x=>x.rec==e.name).reduce((s,x)=>s+x.q-x.ret,0);
+function pGo(m,t){pm=m;pt=t;tagsOn=false;pRows=[{i:0,q:1}];PG.forEach((g,i)=>{if(g[1].includes(m))nOpen["g"+i]=true});go("prop")}
+function navRender(){const c=document.body.dataset.v||"dash",on=x=>x?" on":"",B=(cl,oc,ic,l,x)=>`<button class="nav ${cl}${on(x)}" onclick="${oc}"><span>${ic}</span>${l}</button>`,H=(k,l,ic,cl="")=>`<button class="nav grp ${cl}" onclick="tg('${k}')"><span>${ic}</span>${l}<em>${nOpen[k]?"\u25be":"\u25b8"}</em></button>`;
+let h=B("","go('dash')","\ud83c\udfe0","Home",c=="dash")+H("pers","Personnel","\ud83d\udc65");
+if(nOpen.pers)h+=[["emp","Employees"],["cal","Calendar"],["nosi","Step increments"],["forms","Forms and printing"],["rep","Reports"],["logs","Logs"]].map(([v,l])=>B("sub",`go('${v}')`,"\u00b7",l,c==v)).join("");
+h+=H("prop","Property and inventory","\ud83d\udce6");
+if(nOpen.prop){h+=B("sub","pGo(-1,'Dashboard')","\u00b7","Overview",c=="prop"&&pm<0);PG.forEach(([n,ms],gi)=>{const k="g"+gi;h+=H(k,n,"\u00b7","sub");if(nOpen[k])ms.forEach(m=>{h+=B("sub2"+(c=="prop"&&pm==m?" cur":""),`pGo(${m},'Dashboard')`,"\u2022",MODS[m][0],0);if(c=="prop"&&pm==m)h+=ptabs(m).map(t=>B("sub3",`pGo(${m},'${t}')`,"",t=="IIRUP"?"IIRUP (unserviceable)":t,pt==t)).join("")})})}
+h+=B("","go('set')","\u2699\ufe0f","School settings",c=="set");const nv=$("#nav");if(nv)nv.innerHTML=h}
+const propBlock=e=>{const o=ISS.filter(x=>x.rec==e.name&&x.q>x.ret);return `<p><b>Property in this person\u2019s name:</b> ${o.length?o.map(x=>`${x.name} \u00d7${x.q-x.ret} (${x.no}, ${MODS[x.mod][0]})`).join("; ")+' <span class="tag b">Return before clearance</span>':"none issued"}</p>`};
+
+const monthName=new Intl.DateTimeFormat("en-PH",{month:"long"});
+const monthAndYear=new Intl.DateTimeFormat("en-PH",{month:"long",year:"numeric"});
+let calendarDate=new Date();
+calendarDate.setDate(1);
+$("#cal-months").innerHTML=Array.from({length:12},(_,month)=>
+  `<button type="button" aria-pressed="false">${monthName.format(new Date(2000,month,1))}</button>`
+).join("");
+const monthButtons=$("#cal-months").querySelectorAll("button");
+function renderCalendar(){
+  const year=calendarDate.getFullYear(),month=calendarDate.getMonth();
+  const firstWeekday=calendarDate.getDay();
+  const lastDay=new Date(year,month+1,0).getDate();
+  const weeks=Math.ceil((firstWeekday+lastDay)/7);
+  const today=iso(new Date());
+  $("#cal-period").textContent=monthAndYear.format(calendarDate);
+  monthButtons.forEach((button,index)=>button.setAttribute("aria-pressed",String(index===month)));
+  $("#cal-days").innerHTML=Array.from({length:weeks},(_,week)=>{
+    const cells=Array.from({length:7},(_,weekday)=>{
+      const day=week*7+weekday-firstWeekday+1;
+      if(day<1||day>lastDay)return "<td></td>";
+      const date=iso(new Date(year,month,day));
+      return `<td><time datetime="${date}"${date===today?' aria-current="date"':""}>${day}</time></td>`;
+    });
+    return "<tr>"+cells.join("")+"</tr>";
+  }).join("");
+}
+function selectCalendarMonth(month){
+  calendarDate.setMonth(month,1);
+  renderCalendar();
+}
+monthButtons.forEach((button,month)=>button.onclick=()=>selectCalendarMonth(month));
+$("#cal-prev").onclick=()=>selectCalendarMonth(calendarDate.getMonth()-1);
+$("#cal-next").onclick=()=>selectCalendarMonth(calendarDate.getMonth()+1);
+$("#cal-today").onclick=()=>{calendarDate=new Date();calendarDate.setDate(1);renderCalendar()};
+
+function go(v){document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id=="v-"+v));document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("on",b.dataset.v==v));scrollTo(0,0);try{history.replaceState(null,"","#"+v)}catch(e){}document.body.dataset.v=v;if(v=="emp")setF("all");if(v=="cal")renderCalendar();if(v=="rep")repRender();if(v=="logs")logRender();if(v=="prop")pRender();navRender()}
+document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>{go(b.dataset.v);if(b.dataset.v=="emp")setF("all")});
+$("#q").oninput=rows;
+function refresh(){groups();work();chips();rows();nosi();coe();$("#coeEmp").innerHTML=E.map((e,i)=>`<option value="${i}">${e.name}</option>`).join("");coe()}
+$("#today").textContent="Today is "+T.toLocaleDateString("en-PH",{weekday:"long",month:"long",day:"numeric",year:"numeric"})+". Everything below is calculated from this date.";
+refresh();pRender();repRender();logRender();navRender();const h=location.hash.slice(1);if(["dash","emp","cal","nosi","forms","rep","logs","prop","set"].includes(h))go(h);
+</script></body></html>
