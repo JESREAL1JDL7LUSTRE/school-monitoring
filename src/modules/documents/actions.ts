@@ -2,7 +2,7 @@
 
 import { notFound, redirect } from "next/navigation";
 import { requireSession } from "@/modules/auth/session";
-import { getEmployeeProfile, getPersonnelOverview } from "@/modules/personnel/queries";
+import { getEmployeeDraftProfile, getPersonnelOverview } from "@/modules/personnel/queries";
 import { getSchoolLogoUrl, getSchoolSettings } from "@/modules/settings/queries";
 import { getTemplate } from "./catalog";
 import { buildSnapshot, parseDraftInput, type DocumentSnapshot } from "./snapshot";
@@ -25,7 +25,7 @@ export async function submitDraft(slug: string, _previous: DraftResult, form: Fo
   }
 
   const [settings, profile, overview] = await Promise.all([
-    getSchoolSettings(), input.employeeId ? getEmployeeProfile(input.employeeId) : undefined,
+    getSchoolSettings(), input.employeeId ? getEmployeeDraftProfile(input.employeeId, template.slug) : undefined,
     template.slug === "total-personnel" ? getPersonnelOverview() : undefined,
   ]);
   if (template.slug === "certificate-of-employment" && (profile?.employee.archived_at || !profile?.employee.date_hired)) {

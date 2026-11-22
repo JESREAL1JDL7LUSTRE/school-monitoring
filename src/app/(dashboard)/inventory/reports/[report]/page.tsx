@@ -9,7 +9,7 @@ import { requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
 import { InventoryPrintSheet } from "@/modules/inventory/print-sheet";
 import {
-  getInventoryReportDocuments, getInventoryIssued, getInventoryMaster, getItemHistory, getLatestInventoryCounts,
+  getInventoryReportDocuments, getInventoryIssued, getInventoryMaster, getItemLedger, getLatestInventoryCounts,
 } from "@/modules/inventory/queries";
 import { buildingTableData, countTableData, documentTableData, issueTableData, reportTitles } from "@/modules/inventory/report-data";
 import { classifyItem, dateInManila, inventoryDetail, inventoryDetailFields, money } from "@/modules/inventory/rules";
@@ -41,7 +41,6 @@ const InventoryReportPage = async ({ params, searchParams }: {
   const active = selected.filter((row) => !row.archived_at);
   const property = active.filter((row) => classifyItem(row, row.category.category_type, settings).form === "PAR");
   const buildings = active.filter((row) => row.category.category_type === "building");
-  const matchingDates = (date: string) => (!from || date >= from) && (!through || date <= through);
   const empty = "No records match this report.";
   const title = reportTitles[report];
 
@@ -110,11 +109,11 @@ const InventoryReportPage = async ({ params, searchParams }: {
           }))} empty={empty} />;
       }
       case "issued":
-        return <InventoryTable printAll {...issueTableData(selected, (await getInventoryIssued()).filter((line) => matchingDates(line.transaction_date)))} empty={empty} />;
+        return <InventoryTable printAll {...issueTableData(selected, await getInventoryIssued(from, through))} empty={empty} />;
       case "stock-card": {
         const stock = selected[0];
         if (!stock) return <p>{empty}</p>;
-        const { ledger } = await getItemHistory(stock.id);
+        const ledger = await getItemLedger(stock.id);
         return <><p className="text-sm">{stock.item_code} · {stock.name} · Reorder point {stock.reorder_point} {stock.unit}</p>
           <InventoryTable printAll headings={["Date", "Reference", "Type", "Change", "Balance"]}
             rows={[...ledger].reverse().map((line) => ({

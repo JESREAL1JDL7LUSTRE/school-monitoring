@@ -5,13 +5,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requirePermission } from "@/modules/auth/session";
 import { concernCategories, concernPriorities, concernStatuses, nosiStatuses } from "./database";
-import { getEmployeeProfile } from "./queries";
-import { manilaDate, personnelMetrics } from "./rules";
+import { getNosiCycle } from "./queries";
+import { employeeDateMetrics, manilaDate } from "./rules";
 import { grade, money, mutationFailure, optionalDate, personnelFailure, profileSchema, stalePersonnel, step, uuid, version, type PersonnelActionState } from "./validation";
 
 function success(message: string, employeeId?: string): PersonnelActionState {
   if (employeeId) revalidatePath(`/employees/${employeeId}`);
-  revalidatePath("/", "layout");
+  for (const path of ["/", "/employees", "/nosi", "/logs", "/reports", "/forms", "/inventory"]) revalidatePath(path);
+  revalidatePath("/inventory/transactions/[kind]", "page");
   return { ok: true, message };
 }
 
@@ -93,13 +94,15 @@ export async function saveNosi(_: PersonnelActionState, form: FormData) {
     employee_id: uuid, previous_step_date: z.iso.date(), status: z.enum(nosiStatuses),
   }).safeParse(Object.fromEntries(form));
   if (!input.success) return personnelFailure("Choose a valid NOSI status.");
-  const { employee, context } = await getEmployeeProfile(input.data.employee_id);
-  const { eligibleOn } = personnelMetrics(employee, context);
+  const cycle = await getNosiCycle(input.data.employee_id, input.data.previous_step_date);
+  if (!cycle) return personnelFailure(stalePersonnel);
+  const { employee, context, nosi } = cycle;
+  const { eligibleOn } = employeeDateMetrics(employee, context);
   if (!eligibleOn || employee.archived_at || employee.step_date !== input.data.previous_step_date) return personnelFailure(stalePersonnel);
   const expected = form.get("version") || null;
-  if (employee.nosi_updated_at !== expected) return personnelFailure(stalePersonnel);
-  const { error, data } = employee.nosi_id
-    ? await supabase.from("nosi_records").update({ status: input.data.status, eligibility_date: eligibleOn }).eq("id", employee.nosi_id)
+  if ((nosi?.updated_at ?? null) !== expected) return personnelFailure(stalePersonnel);
+  const { error, data } = nosi
+    ? await supabase.from("nosi_records").update({ status: input.data.status, eligibility_date: eligibleOn }).eq("id", nosi.id)
       .eq("updated_at", String(expected)).select("id").maybeSingle()
     : await supabase.from("nosi_records").insert({ ...input.data, eligibility_date: eligibleOn }).select("id").single();
   return mutationFailure(error, stalePersonnel) ?? (data ? success("NOSI status saved.", employee.id) : personnelFailure(stalePersonnel));

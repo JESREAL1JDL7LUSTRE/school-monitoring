@@ -16,7 +16,7 @@ const signatures = {
 
 function saved(employeeId: string, message: string) {
   revalidatePath(`/employees/${employeeId}`);
-  revalidatePath("/", "layout");
+  for (const path of ["/", "/employees", "/logs", "/reports"]) revalidatePath(path);
   return { ok: true, message };
 }
 

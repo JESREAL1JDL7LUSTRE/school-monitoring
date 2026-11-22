@@ -54,6 +54,11 @@ export type InventoryLedgerLine = {
 };
 
 export type InventoryBalance = { item_id: string; balance: number; total_received: number };
+export type InventoryItemStock = InventoryItem & Pick<InventoryBalance, "balance" | "total_received">;
+export type InventoryActivityRow = Pick<InventoryDocument, "id" | "document_no" | "kind" | "transaction_date" | "reference">;
+type StockCardPageRow = Pick<InventoryActivityRow, "kind" | "transaction_date" | "document_no">
+  & Pick<InventoryLedgerLine, "document_id" | "quantity_delta"> & { id: string; running_balance: number };
+type InventoryFilterArgs = { p_category?: string; p_q?: string; p_condition?: InventoryItem["condition"]; p_active?: boolean; p_low?: boolean };
 
 export type InventoryIssuedLine = {
   issue_line_id: number;
@@ -92,6 +97,7 @@ export type InventoryTables = {
 
 export type InventoryViews = {
   inventory_balances: { Row: InventoryBalance; Relationships: [] };
+  inventory_item_stock: { Row: InventoryItemStock; Relationships: [] };
   inventory_issued_lines: { Row: InventoryIssuedLine; Relationships: [] };
   inventory_latest_counts: { Row: PhysicalCount; Relationships: [] };
   inventory_stock_card: {
@@ -101,6 +107,10 @@ export type InventoryViews = {
 };
 
 export type InventoryFunctions = {
+  inventory_item_list: { Args: InventoryFilterArgs; Returns: InventoryItemStock[] };
+  recent_inventory_activity: { Args: InventoryFilterArgs & { p_item?: string }; Returns: InventoryActivityRow[] };
+  inventory_counts_as_of: { Args: { p_through: string }; Returns: PhysicalCount[] };
+  inventory_stock_card_page: { Args: { p_item: string; p_date?: string; p_id?: string; p_newer?: boolean }; Returns: StockCardPageRow[] };
   post_inventory_document: {
     Args: {
       p_kind: InventoryKind;

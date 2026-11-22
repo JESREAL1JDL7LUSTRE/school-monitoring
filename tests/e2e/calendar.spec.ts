@@ -24,6 +24,26 @@ test("month navigation works by keyboard and stays in the mobile viewport", asyn
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+test("same-month day selection uses browser history without a Calendar request", async ({ page }) => {
+  await loginAs(page, "personnel");
+  await page.goto("/calendar?month=2041-03&day=2041-03-14");
+  const day = (date: number) => page.getByRole("button", { name: new RegExp(`March ${date}, 2041`) });
+  await expect(day(14)).toHaveAttribute("aria-pressed", "true");
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === "/calendar" && url.searchParams.has("day")) requests.push(request.method());
+  });
+  await day(15).click();
+  await expect(page).toHaveURL(/day=2041-03-15/);
+  await expect(day(15)).toHaveAttribute("aria-pressed", "true");
+  await page.goBack();
+  await expect(day(14)).toHaveAttribute("aria-pressed", "true");
+  await page.goForward();
+  await expect(day(15)).toHaveAttribute("aria-pressed", "true");
+  expect(requests).toHaveLength(0);
+});
+
 test("staff save school calendar events and auditors can read them", async ({ page, browser }) => {
   await loginAs(page, "personnel");
   await page.goto("/calendar?month=2041-03&day=2041-03-14");

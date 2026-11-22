@@ -28,7 +28,7 @@ export function Choices({ name, value, values, label }: { name: string; value?: 
   );
 }
 
-export function EmployeePicker({ employees }: { employees: Employee[] }) {
+export function EmployeePicker({ employees }: { employees: Pick<Employee, "id" | "full_name" | "employee_no">[] }) {
   return (
     <Field label="Employee">
       <NativeSelect name="employee_id" className="w-full" required defaultValue="">

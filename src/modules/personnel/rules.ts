@@ -19,6 +19,7 @@ export type PersonnelSummary = Employee & {
   nosi_updated_at: string | null;
   nosi_id: string | null;
   custody_quantity: number;
+  filter_keys?: PersonnelFilter[];
 };
 
 export const personnelFilters = {
@@ -124,6 +125,7 @@ export function personnelMetrics(employee: PersonnelSummary, context: PersonnelC
 }
 
 export function matchesPersonnelFilter(employee: PersonnelSummary, filter: PersonnelFilter, context: PersonnelContext): boolean {
+  if (employee.filter_keys) return employee.filter_keys.includes(filter);
   if (filter === "archived") return Boolean(employee.archived_at);
   if (employee.archived_at) return false;
 

@@ -1,12 +1,12 @@
 "use client";
 
 import { type ComponentProps, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CalendarAgenda, dateFromISO, fullDate } from "@/modules/calendar/agenda";
-import { firstCalendarYear, lastCalendarYear, monthKey as toMonthKey } from "@/modules/calendar/dates";
+import { firstCalendarYear, lastCalendarYear, monthKey as toMonthKey, resolveCalendarDate } from "@/modules/calendar/dates";
 import { CalendarEventForm } from "@/modules/calendar/event-form";
 import type { CalendarEntry } from "@/modules/calendar/queries";
 
@@ -44,14 +44,15 @@ function CalendarDay({ date, day, today, selectedDate, entries, onClick }: {
   );
 }
 
-export function MonthCalendar({ today, monthKey, selectedDate, events, canAdd }: {
+export function MonthCalendar({ today, monthKey, events, canAdd }: {
   today: string;
   monthKey: string;
-  selectedDate: string | null;
   events: CalendarEntry[];
   canAdd: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedDate = resolveCalendarDate(searchParams.get("day") ?? undefined, monthKey);
   const [pending, navigate] = useTransition();
   const [formDate, setFormDate] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -73,7 +74,12 @@ export function MonthCalendar({ today, monthKey, selectedDate, events, canAdd }:
   function showDate(month: string, day?: string | null) {
     const params = new URLSearchParams({ month });
     if (day) params.set("day", day);
-    navigate(() => router.push(`/calendar?${params}`, { scroll: false }));
+    const href = `/calendar?${params}`;
+    if (month === monthKey) {
+      if (href !== window.location.pathname + window.location.search) window.history.pushState(null, "", href);
+      return;
+    }
+    navigate(() => router.push(href, { scroll: false }));
   }
 
   function closeForm() {

@@ -12,9 +12,13 @@ export type InventoryActionState = { error?: string; message?: string };
 
 const errorState = (error: string): InventoryActionState => ({ error });
 const read = (form: FormData, name: string) => String(form.get(name) ?? "");
-const updateInventoryPages = () => {
-  revalidatePath("/inventory", "layout");
-  revalidatePath("/", "page");
+const updateInventoryPages = (items: readonly string[] = []) => {
+  revalidatePath("/inventory");
+  revalidatePath("/inventory/reports/[report]", "page");
+  revalidatePath("/inventory/transactions/[kind]", "page");
+  for (const id of new Set(items)) revalidatePath(`/inventory/items/${id}`);
+  revalidatePath("/");
+  revalidatePath("/logs");
 };
 
 export const saveInventoryItem = async (
@@ -44,7 +48,7 @@ export const saveInventoryItem = async (
   });
   if (error) return errorState(error.code === "23505" ? "This item code is already used." : error.code === "P0001" ? error.message : "Could not save this item.");
   if (!data) return errorState("Another staff member changed this item. Reload before saving.");
-  updateInventoryPages();
+  updateInventoryPages([id]);
   return { message: "Item details saved." };
 };
 
@@ -61,6 +65,9 @@ export const saveInventoryCategory = async (
   if (error) return errorState(error.code === "23505" ? "This category name is already used." : "Could not save this category.");
   if (!data) return errorState("Another staff member changed this category. Reload before saving.");
   updateInventoryPages();
+  revalidatePath("/inventory/categories");
+  revalidatePath("/inventory/items/new");
+  revalidatePath("/inventory/items/[id]", "page");
   return { message: "Category saved." };
 };
 
@@ -105,7 +112,11 @@ export const postInventoryDocument = async (
     p_disposal_details: input.disposal,
   });
   if (error) return errorState(error.code === "P0001" ? error.message : "The transaction could not be posted. Check the details and try again.");
-  updateInventoryPages();
+  updateInventoryPages(input.lines.map((line) => line.item_id));
+  if (input.kind === "issue" || input.kind === "return") {
+    revalidatePath("/employees");
+    revalidatePath("/employees/[id]", "page");
+  }
   redirect(inventoryHref("/inventory/documents/" + data, undefined, inventoryReturnTo(form.get("returnTo"))));
 };
 
@@ -120,7 +131,10 @@ export const savePhysicalCount = async (
     p_item_id: input.item, p_date: input.date, p_quantity: input.quantity, p_location: input.location, p_remarks: input.remarks,
   });
   if (error) return errorState(error.code === "P0001" ? error.message : "Could not save the physical count.");
-  updateInventoryPages();
+  revalidatePath("/inventory");
+  revalidatePath(`/inventory/items/${input.item}`);
+  for (const report of ["rpci", "rpcppe", "annex-a"]) revalidatePath(`/inventory/reports/${report}`);
+  revalidatePath("/logs");
   return { message: "Physical count recorded." };
 };
 

@@ -3,8 +3,8 @@ import { ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/modules/auth/session";
-import { getPersonnelOverview } from "@/modules/personnel/queries";
-import { filterPersonnel, formatPersonnelDate, manilaDate } from "@/modules/personnel/rules";
+import { getPersonnelDirectory } from "@/modules/personnel/queries";
+import { formatPersonnelDate, manilaDate } from "@/modules/personnel/rules";
 import { getTemplate, templates, type Template } from "@/modules/documents/catalog";
 import { DraftForm } from "@/modules/documents/draft-form";
 import { canAccessForm, listGeneratedDocuments } from "@/modules/documents/queries";
@@ -39,8 +39,8 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
     const template = getTemplate(params.template);
     if (!template || !canAccessForm(session, template.scope, "read")) notFound();
     if (template.href) redirect(template.href);
-    const overview = template.employee ? await getPersonnelOverview() : null;
-    const employees = overview ? filterPersonnel(overview.staff, "all", overview.context).map((entry) => ({ id: entry.id, label: `${entry.full_name} · ${entry.employee_no}` })) : [];
+    const directory = template.employee ? await getPersonnelDirectory() : [];
+    const employees = directory.map((entry) => ({ id: entry.id, label: `${entry.full_name} · ${entry.employee_no}` }));
     const selected = employees.find(({ id }) => id === params.employee)?.id ?? "";
 
     return <div className="space-y-5">

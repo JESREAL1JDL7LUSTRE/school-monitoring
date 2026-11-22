@@ -3,11 +3,11 @@ import { inventoryListHref, inventoryReturnTo } from "@/modules/inventory/return
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePermission } from "@/modules/auth/session";
 import { InventoryItemForm } from "@/modules/inventory/item-form";
-import { getInventoryMaster } from "@/modules/inventory/queries";
+import { getInventoryCategories } from "@/modules/inventory/queries";
 
 const NewInventoryItemPage = async ({ searchParams }: { searchParams: Promise<{ category?: string; returnTo?: string }> }) => {
   await requirePermission("inventory.write");
-  const [{ categories }, { category, returnTo }] = await Promise.all([getInventoryMaster(), searchParams]);
+  const [categories, { category, returnTo }] = await Promise.all([getInventoryCategories(), searchParams]);
   return (
     <div className="max-w-4xl space-y-5">
       <header className="space-y-2">

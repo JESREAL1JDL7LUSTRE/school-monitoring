@@ -1,4 +1,5 @@
 import type { Json, Table } from "@/types/database";
+import type { PersonnelFilter } from "./rules";
 
 export const employmentStatuses = ["Permanent", "Substitute", "Job Order", "COS"] as const;
 export const classifications = ["Teaching", "Teaching Related", "NTP"] as const;
@@ -97,6 +98,30 @@ export type PersonnelTables = {
   concern_logs: Table<Concern>;
 };
 export type PersonnelFunctions = {
+  personnel_list_rows: { Args: PersonnelListContext; Returns: PersonnelListRow[] };
+  personnel_list_page: { Args: PersonnelListContext & { p_q: string; p_filter: PersonnelFilter; p_offset: number; p_limit: number }; Returns: PersonnelListPage };
   inventory_employee_directory: { Args: Record<PropertyKey, never>; Returns: Pick<Employee, "id" | "employee_no" | "full_name">[] };
   create_employee: { Args: { p_profile: Json; p_salary?: Json; p_license_expiry?: string }; Returns: string };
 };
+
+type PersonnelListContext = {
+  p_as_of: string; p_reporting_year: number; p_step_months: number;
+  p_retirement_age: number; p_loyalty_first: number; p_loyalty_interval: number;
+};
+
+export type PersonnelListRow = {
+  id: string;
+  full_name: string;
+  employee: Employee;
+  checklist_done: number;
+  checklist_total: number;
+  license_expiry: string | null;
+  current_salary: SalaryRecord | null;
+  step_date: string | null;
+  nosi_status: NosiRecord["status"];
+  nosi_updated_at: string | null;
+  nosi_id: string | null;
+  custody_quantity: number;
+  filter_keys: PersonnelFilter[];
+};
+type PersonnelListPage = { rows: PersonnelListRow[]; total: number; facets: Partial<Record<PersonnelFilter, number>> };

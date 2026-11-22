@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { Archive, CalendarDays, ChartNoAxesCombined, ClipboardList, FileText, History, House, School, Settings2, Users } from "lucide-react";
 import { DeskNavigation, type DeskNavGroup } from "@/components/desk-navigation";
@@ -20,7 +20,6 @@ function Brand() {
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await requireSession();
-  const settings = await getSchoolSettings();
   const personnel = hasPermission(session, "personnel.read");
   const inventory = hasPermission(session, "inventory.read");
   const audit = hasPermission(session, "audit.read");
@@ -61,13 +60,22 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <DeskNavigation groups={groups} mobile />
         </div>
         <header aria-label="School identity" className="desk-chrome sticky top-0 z-20 border-b border-border bg-card">
-          <div className="mx-auto flex min-h-14 max-w-[88rem] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2 sm:px-6 lg:px-8">
-            <p className="text-sm font-semibold text-foreground">{settings.school_name}</p>
-            <p className="text-sm text-muted-foreground">{[settings.region, settings.division].filter(Boolean).join(" · ")}</p>
+          <div className="mx-auto flex min-h-14 max-w-[88rem] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2 text-sm sm:px-6 lg:px-8">
+            <Suspense fallback={<span aria-hidden="true" className="h-4 w-40 rounded bg-muted" />}>
+              <SchoolIdentity />
+            </Suspense>
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className="desk-content mx-auto max-w-[88rem] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>
   );
+}
+
+async function SchoolIdentity() {
+  const settings = await getSchoolSettings();
+  return <>
+    <p className="font-semibold text-foreground">{settings.school_name}</p>
+    <p className="text-muted-foreground">{[settings.region, settings.division].filter(Boolean).join(" · ")}</p>
+  </>;
 }

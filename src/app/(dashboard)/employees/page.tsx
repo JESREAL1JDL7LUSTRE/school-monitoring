@@ -1,23 +1,30 @@
 import Link from "next/link";
+import { TablePageLinks, tablePage, tablePageSize } from "@/components/table-page-links";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
-import { getPersonnelOverview } from "@/modules/personnel/queries";
-import { filterPersonnel, formatPersonnelDate, personnelFilterLabel, personnelFilters, personnelMetrics, readPersonnelFilter, type PersonnelFilter } from "@/modules/personnel/rules";
+import { getPersonnelPage } from "@/modules/personnel/queries";
+import { formatPersonnelDate, personnelFilterLabel, personnelFilters, personnelMetrics, readPersonnelFilter, type PersonnelFilter } from "@/modules/personnel/rules";
 import { Field, PersonnelHeading, Status } from "@/modules/personnel/ui";
 
 export default async function EmployeesPage({ searchParams }: PageProps<"/employees">) {
-  const session = await requirePermission("personnel.read");
-  const [{ staff, context }, search] = await Promise.all([getPersonnelOverview(), searchParams]);
+  const search = await searchParams;
   const filter = readPersonnelFilter(typeof search.filter === "string" ? search.filter : undefined);
   const query = typeof search.q === "string" ? search.q.trim().slice(0, 160) : "";
-  const normalized = query.toLocaleLowerCase("en-PH");
-  const employees = filterPersonnel(staff, filter, context).filter((entry) =>
-    [entry.full_name, entry.employee_no, entry.position].some((value) => value.toLocaleLowerCase("en-PH").includes(normalized)),
-  );
+  const page = tablePage(search.page);
+  const [session, { employees, context, total, facets }] = await Promise.all([
+    requirePermission("personnel.read"), getPersonnelPage(filter, query, page, tablePageSize),
+  ]);
+  const pageHref = (number: number) => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (filter !== "all") params.set("filter", filter);
+    if (number > 1) params.set("page", String(number));
+    return params.size ? `/employees?${params}` : "/employees";
+  };
   return (
     <div className="space-y-5">
       <PersonnelHeading title="Employees" actions={hasPermission(session, "personnel.write") &&
@@ -29,7 +36,7 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
             <Field label="Filter by">
               <NativeSelect name="filter" defaultValue={filter} size="touch" className="w-full">
                 {(Object.keys(personnelFilters) as PersonnelFilter[]).map((key) => (
-                  <NativeSelectOption value={key} key={key}>{personnelFilterLabel(key, context)} ({filterPersonnel(staff, key, context).length})</NativeSelectOption>
+                  <NativeSelectOption value={key} key={key}>{personnelFilterLabel(key, context)} ({facets[key] ?? 0})</NativeSelectOption>
                 ))}
               </NativeSelect>
             </Field>
@@ -40,7 +47,7 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
       <Card className="py-3">
         <CardContent className="px-2 sm:px-4">
           <Table className="caption-top">
-            <caption className="border-b pb-3 text-left text-sm text-muted-foreground">{employees.length} matching {employees.length === 1 ? "employee" : "employees"}</caption>
+            <caption className="border-b pb-3 text-left text-sm text-muted-foreground">{total} matching {total === 1 ? "employee" : "employees"}</caption>
             <TableHeader>
               <TableRow>{["Employee", "Status", "Age", "Years in service", "Next step", "201 file", "License"].map((label) => <TableHead key={label}>{label}</TableHead>)}</TableRow>
             </TableHeader>
@@ -65,6 +72,9 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
               {!employees.length && <TableRow><TableCell colSpan={7} className="py-10 text-center text-muted-foreground">No employees match. Try another search or filter.</TableCell></TableRow>}
             </TableBody>
           </Table>
+          <TablePageLinks previous={page > 1 ? pageHref(Math.min(page - 1, Math.max(1, Math.ceil(total / tablePageSize)))) : undefined}
+            next={page * tablePageSize < total ? pageHref(page + 1) : undefined}
+            label={employees.length ? `Rows ${(page - 1) * tablePageSize + 1}–${(page - 1) * tablePageSize + employees.length} of ${total}` : `Page ${page}`} />
         </CardContent>
       </Card>
     </div>

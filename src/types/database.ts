@@ -60,6 +60,10 @@ export type Database = {
     Views: InventoryViews;
     Functions: {
       get_staff_access: { Args: Record<never, never>; Returns: { roles: Role[]; permissions: Permission[] } };
+      audit_log_page: {
+        Args: { p_at?: string; p_id?: string; p_newer?: boolean };
+        Returns: (Omit<AuditLog, "id" | "old_values" | "new_values"> & { id: string })[];
+      };
       has_permission: { Args: { permission: Permission }; Returns: boolean };
       list_staff_roles: { Args: Record<never, never>; Returns: { email: string; roles: Role[] }[] };
       update_staff_role: {

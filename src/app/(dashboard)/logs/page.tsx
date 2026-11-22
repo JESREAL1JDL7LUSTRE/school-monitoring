@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
+import { TablePageLinks } from "@/components/table-page-links";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,10 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { addConcern, updateConcern } from "@/modules/personnel/actions";
+import { getAuditPage } from "@/modules/personnel/audit";
 import { concernCategories, concernPriorities, concernStatuses } from "@/modules/personnel/database";
 import { PersonnelForm } from "@/modules/personnel/form";
 import { SalaryForm, SalaryTable } from "@/modules/personnel/history";
-import { getPersonnelLogs } from "@/modules/personnel/queries";
+import { getConcerns, getPersonnelContext, getPersonnelDirectory, getSalaryHistory } from "@/modules/personnel/queries";
 import { formatPersonnelDate } from "@/modules/personnel/rules";
 import { Choices, EmployeePicker, Field, PersonnelHeading, Status } from "@/modules/personnel/ui";
 
@@ -30,8 +32,15 @@ export default async function LogsPage({ searchParams }: PageProps<"/logs">) {
   const session = await requirePermission("personnel.read");
   const canEdit = hasPermission(session, "personnel.write");
   const canAudit = hasPermission(session, "audit.read");
-  const [{ staff, context, concerns, salaryHistory, audit }, search] = await Promise.all([getPersonnelLogs(), searchParams]);
+  const search = await searchParams;
   const tab = search.view === "salary" ? "salary" : search.view === "audit" && canAudit ? "audit" : "concerns";
+  const [staff, context, concerns, salaryHistory, audit] = await Promise.all([
+    tab === "audit" ? [] : getPersonnelDirectory(false),
+    tab === "salary" ? getPersonnelContext() : null,
+    tab === "concerns" ? getConcerns() : [],
+    tab === "salary" ? getSalaryHistory() : [],
+    tab === "audit" ? getAuditPage(search) : null,
+  ]);
   const active = staff.filter((employee) => !employee.archived_at);
   const names = new Map(staff.map((entry) => [entry.id, entry.full_name]));
   const tabs = [["concerns", "Concern logs"], ["salary", "Salary changes"], ...(canAudit ? [["audit", "Audit history"]] : [])];
@@ -77,19 +86,21 @@ export default async function LogsPage({ searchParams }: PageProps<"/logs">) {
             </Table>
           </CardContent>
         )}
-        {tab === "salary" && <CardContent role="region" aria-label="Salary changes" className="space-y-4 px-2 py-4 sm:px-4">
+        {tab === "salary" && context && <CardContent role="region" aria-label="Salary changes" className="space-y-4 px-2 py-4 sm:px-4">
             {canEdit && active.length > 0 && <LogEntry label="Add salary change"><SalaryForm employees={active} asOf={context.asOf} /></LogEntry>}
             <SalaryTable rows={salaryHistory} staff={staff} asOf={context.asOf} />
         </CardContent>}
-        {tab === "audit" && <CardContent role="region" aria-label="Audit history" className="px-2 py-3 sm:px-4"><Table>
+        {audit && <CardContent role="region" aria-label="Audit history" className="px-2 py-3 sm:px-4"><Table>
           <TableHeader><TableRow>{["Date", "Account", "Action", "Record type", "Record ID"].map((label) => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader>
           <TableBody>
-            {audit.map((entry) => <TableRow key={entry.id}><TableCell>{formatPersonnelDate(entry.created_at)}</TableCell>
+            {audit.rows.map((entry) => <TableRow key={entry.id}><TableCell>{formatPersonnelDate(entry.created_at)}</TableCell>
               <TableCell className="text-xs">{entry.user_id ?? "System"}</TableCell><TableCell>{entry.action}</TableCell><TableCell>{entry.entity_type}</TableCell><TableCell className="text-xs">{entry.entity_id ?? "—"}</TableCell>
             </TableRow>)}
-            {!audit.length && <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No audited changes yet.</TableCell></TableRow>}
+            {!audit.rows.length && <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">No audited changes on this page.</TableCell></TableRow>}
           </TableBody>
-        </Table></CardContent>}
+        </Table>
+          <TablePageLinks previous={audit.previous} next={audit.next} label={`${audit.rows.length} audit records`} />
+        </CardContent>}
       </Card>
     </div>
   );

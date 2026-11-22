@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { SchoolSettings } from "@/types/database";
 import { formatPersonnelDate, formatSalary, personnelFilters, personnelMetrics, filterPersonnel } from "@/modules/personnel/rules";
-import type { getEmployeeProfile, getPersonnelOverview } from "@/modules/personnel/queries";
+import type { getEmployeeDraftProfile, getPersonnelOverview } from "@/modules/personnel/queries";
 import type { Template } from "./catalog";
 
 const text = z.string();
@@ -23,7 +23,7 @@ export const snapshotSchema = z.object({
 
 export type DocumentSnapshot = z.infer<typeof snapshotSchema>;
 type Section = z.infer<typeof sectionSchema>;
-type Profile = Awaited<ReturnType<typeof getEmployeeProfile>>;
+type Profile = Awaited<ReturnType<typeof getEmployeeDraftProfile>>;
 type Overview = Awaited<ReturnType<typeof getPersonnelOverview>>;
 
 export function parseDraftInput(form: FormData, template: Template) {

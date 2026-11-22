@@ -2,12 +2,12 @@ import { InventoryBackButton } from "@/modules/inventory/back-button";
 import { inventoryReturnTo } from "@/modules/inventory/return-navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requirePermission } from "@/modules/auth/session";
-import { getInventoryMaster } from "@/modules/inventory/queries";
+import { getInventoryCategories } from "@/modules/inventory/queries";
 import { InventoryCategoryForm } from "@/modules/inventory/maintenance-forms";
 
 const CategoriesPage = async ({ searchParams }: PageProps<"/inventory/categories">) => {
   await requirePermission("inventory.write");
-  const [{ categories }, { returnTo }] = await Promise.all([getInventoryMaster(), searchParams]);
+  const [categories, { returnTo }] = await Promise.all([getInventoryCategories(), searchParams]);
   return (
     <div className="max-w-4xl space-y-5">
       <header className="space-y-2">

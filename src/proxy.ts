@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import { supabaseTiming } from "@/lib/supabase/timing";
 import type { Database } from "@/types/database";
 
 export const proxy = async (request: NextRequest) => {
@@ -9,6 +10,7 @@ export const proxy = async (request: NextRequest) => {
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient<Database>(configuration.url, configuration.key, {
+    global: { fetch: supabaseTiming("proxy") },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (cookiesToSet, headers) => {
@@ -20,7 +22,7 @@ export const proxy = async (request: NextRequest) => {
     },
   });
 
-  await supabase.auth.getUser();
+  await supabase.auth.getClaims();
   return response;
 };
 

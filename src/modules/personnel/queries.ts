@@ -4,8 +4,8 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
-import type { DocumentType, Employee, EmployeeAttachment, EmployeeDocument, EmployeeLicense, NosiRecord, SalaryRecord } from "./database";
-import { manilaDate, type PersonnelContext, type PersonnelSummary } from "./rules";
+import type { DocumentType, Employee, EmployeeAttachment, EmployeeDocument, EmployeeLicense, NosiRecord, PersonnelListRow, SalaryRecord } from "./database";
+import { manilaDate, type PersonnelContext, type PersonnelFilter, type PersonnelSummary } from "./rules";
 
 type Rows<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
 
@@ -34,21 +34,42 @@ export const getPersonnelContext = cache(async (): Promise<PersonnelContext> => 
   };
 });
 
-function groupByEmployee<T extends { employee_id: string }>(rows: T[]) {
-  const byEmployee = new Map<string, T[]>();
-  for (const row of rows) {
-    const existing = byEmployee.get(row.employee_id);
-    if (existing) existing.push(row);
-    else byEmployee.set(row.employee_id, [row]);
-  }
-  return byEmployee;
+const contextArgs = (context: PersonnelContext) => ({
+  p_as_of: context.asOf,
+  p_reporting_year: context.reportingYear,
+  p_step_months: context.stepIntervalMonths,
+  p_retirement_age: context.retirementAge,
+  p_loyalty_first: context.loyaltyFirstYears,
+  p_loyalty_interval: context.loyaltyIntervalYears,
+});
+
+const toPersonnelSummary = ({ employee, ...record }: PersonnelListRow): PersonnelSummary =>
+  ({ ...employee, ...record });
+
+export async function getPersonnelPage(filter: PersonnelFilter, query: string, page: number, pageSize: number) {
+  const [{ supabase }, context] = await Promise.all([requirePermission("personnel.read"), getPersonnelContext()]);
+  const { data, error } = await supabase.rpc("personnel_list_page", {
+    ...contextArgs(context), p_q: query, p_filter: filter, p_offset: (page - 1) * pageSize, p_limit: pageSize,
+  });
+  if (error || !data) throw new Error("Could not load the employee masterlist.");
+  return { context, employees: data.rows.map(toPersonnelSummary), total: data.total, facets: data.facets };
 }
+
+export const getPersonnelDirectory = cache(async (activeOnly = true) => {
+  const { supabase } = await requirePermission("personnel.read");
+  return allRows((start, end) => {
+    const query = supabase.from("employees").select("id,full_name,employee_no,archived_at").order("full_name").order("id");
+    return (activeOnly ? query.is("archived_at", null) : query).range(start, end);
+  });
+});
+
+const effectiveStepDate = (initial: string | null, reset: string | null, asOf: string) =>
+  [initial, reset].filter((value): value is string => Boolean(value && value <= asOf)).sort().at(-1) ?? null;
 
 function summarize(employee: Employee, context: PersonnelContext, documentTypes: DocumentType[], statuses: EmployeeDocument[], licenses: EmployeeLicense[], salary: SalaryRecord[], nosi: NosiRecord[]): PersonnelSummary {
   const currentSalary = salary.find((entry) => entry.effective_from <= context.asOf) ?? null;
   const lastSalaryStep = salary.find((entry) => entry.resets_step_date && entry.effective_from <= context.asOf)?.effective_from ?? null;
-  const stepDate = [employee.initial_step_date, lastSalaryStep]
-    .filter((value): value is string => Boolean(value && value <= context.asOf)).sort().at(-1) ?? null;
+  const stepDate = effectiveStepDate(employee.initial_step_date, lastSalaryStep, context.asOf);
   const nosiRecord = nosi.find((entry) => entry.previous_step_date === stepDate);
   const activeTypes = new Set(documentTypes.map((item) => item.id));
   return {
@@ -65,54 +86,72 @@ function summarize(employee: Employee, context: PersonnelContext, documentTypes:
   };
 }
 
-const personnelData = cache(async (employeeId?: string) => {
+type PersonnelRead = "profile" | "checklist" | "salary" | "nosi" | "employee";
+
+const personnelData = cache(async (employeeId: string, mode: PersonnelRead = "profile") => {
   const { supabase } = await requirePermission("personnel.read");
+  const checklist = mode === "profile" || mode === "checklist";
+  const salary = mode === "profile" || mode === "salary" || mode === "nosi";
   const [context, employees, documentTypes, statuses, licenses, salaryHistory, nosiHistory] = await Promise.all([
     getPersonnelContext(),
-    allRows((start, end) => {
-      const query = supabase.from("employees").select("*").order("full_name").order("id");
-      return (employeeId ? query.eq("id", employeeId) : query).range(start, end);
-    }),
-    allRows((start, end) => supabase.from("document_types").select("*").eq("active", true).order("sort_order").order("id").range(start, end)),
-    allRows((start, end) => {
+    allRows((start, end) => supabase.from("employees").select("*").eq("id", employeeId).range(start, end)),
+    checklist ? allRows((start, end) => supabase.from("document_types").select("*").eq("active", true).order("sort_order").order("id").range(start, end)) : [],
+    checklist ? allRows((start, end) => {
       const query = supabase.from("employee_documents").select("*").order("id");
-      return (employeeId ? query.eq("employee_id", employeeId) : query).range(start, end);
-    }),
-    allRows((start, end) => {
+      return query.eq("employee_id", employeeId).range(start, end);
+    }) : [],
+    mode === "profile" ? allRows((start, end) => {
       const query = supabase.from("employee_licenses").select("*").order("expiry_date").order("id");
-      return (employeeId ? query.eq("employee_id", employeeId) : query).range(start, end);
-    }),
-    allRows((start, end) => {
+      return query.eq("employee_id", employeeId).range(start, end);
+    }) : [],
+    salary ? allRows((start, end) => {
       const query = supabase.from("employee_salary_history").select("*").order("effective_from", { ascending: false }).order("id");
-      return (employeeId ? query.eq("employee_id", employeeId) : query).range(start, end);
-    }),
-    allRows((start, end) => {
+      return query.eq("employee_id", employeeId).range(start, end);
+    }) : [],
+    mode === "profile" || mode === "nosi" ? allRows((start, end) => {
       const query = supabase.from("nosi_records").select("*").order("previous_step_date", { ascending: false }).order("id");
-      return (employeeId ? query.eq("employee_id", employeeId) : query).range(start, end);
-    }),
+      return query.eq("employee_id", employeeId).range(start, end);
+    }) : [],
   ]);
   return { context, employees, documentTypes, statuses, licenses, salaryHistory, nosiHistory };
 });
 
+export async function getEmployeeDraftProfile(id: string, template: string) {
+  const mode: PersonnelRead = template === "employee-201" ? "checklist"
+    : template === "nosi" ? "nosi"
+    : template === "certificate-of-employment" || template === "service-record" ? "salary"
+    : "employee";
+  const { context, employees, documentTypes, statuses, licenses, salaryHistory, nosiHistory } = await personnelData(id, mode);
+  if (!employees[0]) notFound();
+  const employee = summarize(employees[0], context, documentTypes, statuses, licenses, salaryHistory, nosiHistory);
+  const checklist = documentTypes.map((document) => ({
+    name: document.name,
+    entry: statuses.find((status) => status.document_type_id === document.id) ?? null,
+  }));
+  return { employee, context, checklist, salaryHistory };
+}
+
 export const getPersonnelOverview = cache(async () => {
-  const { supabase } = await requirePermission("personnel.read");
-  const [{ context, employees, documentTypes, statuses, licenses, salaryHistory, nosiHistory }, totals] = await Promise.all([
-    personnelData(),
-    allRows((start, end) => supabase.rpc("employee_custody_totals").order("employee_id").range(start, end)),
-  ]);
-  const custody = new Map(totals.map((total) => [total.employee_id, total.outstanding]));
-  const checklistByEmployee = groupByEmployee(statuses);
-  const licenseByEmployee = groupByEmployee(licenses);
-  const salaryByEmployee = groupByEmployee(salaryHistory);
-  const nosiByEmployee = groupByEmployee(nosiHistory);
-  const staff = employees.map((employee) => ({ ...summarize(employee, context, documentTypes,
-    checklistByEmployee.get(employee.id) ?? [],
-    licenseByEmployee.get(employee.id) ?? [],
-    salaryByEmployee.get(employee.id) ?? [],
-    nosiByEmployee.get(employee.id) ?? [],
-  ), custody_quantity: custody.get(employee.id) ?? 0 }));
+  const [{ supabase }, context] = await Promise.all([requirePermission("personnel.read"), getPersonnelContext()]);
+  const rows = await allRows((start, end) => supabase.rpc("personnel_list_rows", contextArgs(context))
+    .order("full_name").order("id").range(start, end));
+  const staff = rows.map(toPersonnelSummary);
   return { staff, context };
 });
+
+export async function getNosiCycle(id: string, expectedStep: string) {
+  const [{ supabase }, context] = await Promise.all([requirePermission("personnel.write"), getPersonnelContext()]);
+  const [employee, reset, nosi] = await Promise.all([
+    supabase.from("employees").select("id,archived_at,employment_status,initial_step_date,date_of_birth,date_hired").eq("id", id).maybeSingle(),
+    supabase.from("employee_salary_history").select("effective_from").eq("employee_id", id).eq("resets_step_date", true)
+      .lte("effective_from", context.asOf).order("effective_from", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("nosi_records").select("id,updated_at").eq("employee_id", id).eq("previous_step_date", expectedStep).maybeSingle(),
+  ]);
+  if (employee.error || reset.error || nosi.error) throw new Error("Could not load the current step cycle.");
+  if (!employee.data) return null;
+  const step_date = effectiveStepDate(employee.data.initial_step_date, reset.data?.effective_from ?? null, context.asOf);
+  return { employee: { ...employee.data, step_date }, context, nosi: nosi.data };
+}
 
 export const getEmployeeProfile = cache(async (id: string) => {
   if (!/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(id)) notFound();
@@ -137,16 +176,14 @@ export const getEmployeeProfile = cache(async (id: string) => {
     context, checklist, licenses, salaryHistory, nosiHistory, custody };
 });
 
-export const getPersonnelLogs = cache(async () => {
-  const session = await requirePermission("personnel.read");
-  const [{ staff, context }, concerns, salaryHistory, audit] = await Promise.all([
-    getPersonnelOverview(),
-    allRows((start, end) => session.supabase.from("concern_logs").select("*").order("created_at", { ascending: false }).order("id").range(start, end)),
-    allRows((start, end) => session.supabase.from("employee_salary_history").select("*").order("effective_from", { ascending: false }).order("id").range(start, end)),
-    hasPermission(session, "audit.read")
-      ? allRows((start, end) => session.supabase.from("audit_logs").select("id,user_id,action,entity_type,entity_id,created_at")
-        .order("created_at", { ascending: false }).order("id", { ascending: false }).range(start, end))
-      : [],
-  ]);
-  return { staff, context, concerns, salaryHistory, audit };
-});
+export async function getConcerns() {
+  const { supabase } = await requirePermission("personnel.read");
+  return allRows((start, end) => supabase.from("concern_logs").select("*")
+    .order("created_at", { ascending: false }).order("id").range(start, end));
+}
+
+export async function getSalaryHistory() {
+  const { supabase } = await requirePermission("personnel.read");
+  return allRows((start, end) => supabase.from("employee_salary_history").select("*")
+    .order("effective_from", { ascending: false }).order("id").range(start, end));
+}

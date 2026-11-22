@@ -45,7 +45,7 @@ export function LicenseHistory({ employeeId, licenses, canEdit }: { employeeId: 
   );
 }
 
-export function SalaryForm({ employeeId, employees, asOf }: { employeeId?: string; employees?: Employee[]; asOf: string }) {
+export function SalaryForm({ employeeId, employees, asOf }: { employeeId?: string; employees?: Pick<Employee, "id" | "full_name" | "employee_no">[]; asOf: string }) {
   return (
     <PersonnelForm action={appendSalary} submit="Record salary change">
       {employeeId ? <input name="employee_id" type="hidden" value={employeeId} /> : <EmployeePicker employees={employees ?? []} />}
@@ -62,7 +62,7 @@ export function SalaryForm({ employeeId, employees, asOf }: { employeeId?: strin
   );
 }
 
-export function SalaryTable({ rows, staff, asOf }: { rows: SalaryRecord[]; staff?: Employee[]; asOf: string }) {
+export function SalaryTable({ rows, staff, asOf }: { rows: SalaryRecord[]; staff?: Pick<Employee, "id" | "full_name">[]; asOf: string }) {
   const names = new Map(staff?.map((employee) => [employee.id, employee.full_name]));
   const recordsByEmployee = new Map<string, SalaryRecord>();
   const previousByRecord = new Map<string, SalaryRecord>();

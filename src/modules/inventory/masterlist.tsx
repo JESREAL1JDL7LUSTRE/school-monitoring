@@ -1,21 +1,23 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { inventoryHref } from "./return-navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { InventoryDocument, InventoryIssuedLine, PhysicalCount } from "./database";
+import type { InventoryActivityRow, InventoryIssuedLine, PhysicalCount } from "./database";
 import type { StockItem } from "./queries";
 import { classifyItem, dateInManila, money } from "./rules";
 import { InventoryTable } from "./table";
 import { InventoryCountForm, InventoryImportForm } from "./maintenance-forms";
 import type { SchoolSettings } from "@/types/database";
 
-export const InventoryMasterlist = ({ items, category, query, canWrite, settings, returnTo }: {
+export const InventoryMasterlist = ({ items, category, query, canWrite, settings, returnTo, pagination }: {
   items: StockItem[];
   category?: string;
   query?: string;
   canWrite: boolean;
   returnTo: string;
+  pagination: ReactNode;
   settings: Pick<SchoolSettings, "ppe_threshold" | "semi_expendable_threshold">;
 }) => {
   const filter = new URLSearchParams();
@@ -47,6 +49,7 @@ export const InventoryMasterlist = ({ items, category, query, canWrite, settings
             <span key={item.id}>{item.archived_at ? "Archived" : item.condition} · {classifyItem(item, item.category.category_type, settings).label}</span>,
           ],
         }))} empty="No items match these filters." />
+        {pagination}
         {canWrite && (
           <details className="rounded-lg border p-4">
             <summary className="cursor-pointer font-medium">Import Excel</summary>
@@ -129,7 +132,7 @@ export const InventoryCounts = ({ items, latest, canWrite, category, returnTo }:
   </Card>
 );
 
-export const InventoryActivity = ({ documents, returnTo }: { documents: InventoryDocument[]; returnTo: string }) => (
+export const InventoryActivity = ({ documents, returnTo }: { documents: InventoryActivityRow[]; returnTo: string }) => (
   <Card>
     <CardHeader><CardTitle><h2>Recent transactions</h2></CardTitle></CardHeader>
     <CardContent>

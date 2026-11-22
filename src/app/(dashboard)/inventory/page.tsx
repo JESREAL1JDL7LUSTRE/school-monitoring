@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TablePageLinks, tablePage, tablePageSize } from "@/components/table-page-links";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
 import { inventoryHref, inventoryViews } from "@/modules/inventory/return-navigation";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,10 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
 import { InventoryActivity, InventoryCounts, InventoryIssuedSummary, InventoryMasterlist } from "@/modules/inventory/masterlist";
-import { getInventoryDocuments, getInventoryIssued, getInventoryMaster, getLatestInventoryCounts } from "@/modules/inventory/queries";
+import { getInventoryCategories, getInventoryDocuments, getInventoryIssued, getInventoryItemsPage, getInventoryMaster, getLatestInventoryCounts } from "@/modules/inventory/queries";
 import { inventoryConditions } from "@/modules/inventory/database";
 import { InventoryCategoryNavigation, InventoryCategoryTools } from "@/modules/inventory/navigation";
 import { InventoryOverview } from "@/modules/inventory/overview";
-import { inventorySnapshot } from "@/modules/inventory/snapshot";
 
 const reports = [
   ["rsmi", "Report of Supplies and Materials Issued (RSMI)"],
@@ -29,15 +29,28 @@ const reports = [
 ] as const;
 
 const InventoryPage = async ({ searchParams }: {
-  searchParams: Promise<{ category?: string; q?: string; view?: string; scope?: string; low?: string; active?: string; condition?: string; custody?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; view?: string; scope?: string; low?: string; active?: string; condition?: string; custody?: string; page?: string }>;
 }) => {
-  const [session, { categories, items }, { category, q, view, scope, low, active: activeOnly, condition, custody }, settings] = await Promise.all([
-    requirePermission("inventory.read"), getInventoryMaster(), searchParams, getSchoolSettings(),
-  ]);
-  const selected = categories.find((row) => row.id === category);
+  const { category, q, view, scope, low, active: activeOnly, condition, custody, page: pageParam } = await searchParams;
   const match = typeof q === "string" ? q.trim() : "";
   const activeView = inventoryViews.find(([value]) => value === view)?.[0] ?? "overview";
   const selectedCondition = inventoryConditions.find((value) => value === condition);
+  const page = tablePage(pageParam);
+  const dbFilters = {
+    p_category: typeof category === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(category) ? category : undefined,
+    p_q: match, p_condition: selectedCondition, p_active: activeOnly === "1", p_low: low === "1",
+  };
+  const [session, { items, categories, total }, settings, documents, issued, counts] = await Promise.all([
+    requirePermission("inventory.read"),
+    activeView === "items" ? getInventoryItemsPage(dbFilters, page, tablePageSize)
+      : activeView === "reports" ? getInventoryCategories().then((categories) => ({ categories, items: [], total: 0 }))
+      : getInventoryMaster().then((master) => ({ ...master, total: 0 })),
+    activeView === "items" ? getSchoolSettings() : null,
+    activeView === "overview" ? getInventoryDocuments(dbFilters) : [],
+    activeView === "issued" || activeView === "overview" ? getInventoryIssued() : [],
+    activeView === "counts" || activeView === "overview" ? getLatestInventoryCounts() : new Map(),
+  ]);
+  const selected = categories.find((row) => row.id === category);
   const filtered = items.filter((item) => (!selected || selected.id === item.category_id)
     && (!match || `${item.item_code} ${item.name}`.toLowerCase().includes(match.toLowerCase()))
     && (!selectedCondition || item.condition === selectedCondition)
@@ -46,11 +59,6 @@ const InventoryPage = async ({ searchParams }: {
   const active = filtered.filter((item) => item.archived_at === null);
   const itemIds = new Set(filtered.map(({ id }) => id));
   const canWrite = hasPermission(session, "inventory.write");
-  const [documents, issued, counts] = await Promise.all([
-    activeView === "overview" ? getInventoryDocuments() : [],
-    activeView === "issued" || activeView === "overview" ? getInventoryIssued() : [],
-    activeView === "counts" || activeView === "overview" ? getLatestInventoryCounts() : new Map(),
-  ]);
   const query = new URLSearchParams();
   if (selected) query.set("category", selected.id);
   if (match) query.set("q", match);
@@ -62,7 +70,12 @@ const InventoryPage = async ({ searchParams }: {
   if (scope === "all") categoryFilters.set("scope", scope);
 
   categoryFilters.set("view", activeView);
-  const returnTo = inventoryHref("/inventory", categoryFilters);
+  const pageHref = (number: number) => {
+    const params = new URLSearchParams(categoryFilters);
+    if (number > 1) params.set("page", String(number));
+    return inventoryHref("/inventory", params);
+  };
+  const returnTo = pageHref(activeView === "items" ? page : 1);
 
   return (
     <div className="space-y-5">
@@ -100,14 +113,13 @@ const InventoryPage = async ({ searchParams }: {
       {activeView === "overview" && (
         <>
           <InventoryOverview items={active} issued={issued} counts={counts} query={query} />
-          <InventoryActivity returnTo={returnTo} documents={documents.filter((document) => {
-            if (!selected && !match) return true;
-            const snapshot = inventorySnapshot.safeParse(document.snapshot);
-            return Boolean(snapshot.data?.lines.some((line) => itemIds.has(line.item_id)));
-          })} />
+          <InventoryActivity returnTo={returnTo} documents={documents} />
         </>
       )}
-      {activeView === "items" && <InventoryMasterlist returnTo={returnTo} items={filtered} category={selected?.id} query={match} canWrite={canWrite} settings={settings} />}
+      {activeView === "items" && settings && <InventoryMasterlist returnTo={returnTo} items={items} category={selected?.id} query={match} canWrite={canWrite} settings={settings}
+        pagination={<TablePageLinks previous={page > 1 ? pageHref(Math.min(page - 1, Math.max(1, Math.ceil(total / tablePageSize)))) : undefined}
+          next={page * tablePageSize < total ? pageHref(page + 1) : undefined}
+          label={items.length ? `Rows ${(page - 1) * tablePageSize + 1}–${(page - 1) * tablePageSize + items.length} of ${total}` : `${total} matching items`} />} />}
       {activeView === "issued" && <InventoryIssuedSummary returnTo={returnTo} lines={issued.filter((line) => itemIds.has(line.item_id) && (scope === "all" || line.outstanding > 0)
         && (custody !== "1" || line.form_type !== "RIS"))}
         items={filtered} category={selected?.id} canWrite={canWrite} all={scope === "all"} custody={custody === "1"} />}

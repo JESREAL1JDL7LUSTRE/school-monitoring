@@ -6,7 +6,7 @@ export const inventoryViews = [
 ] as const;
 
 export type InventoryView = (typeof inventoryViews)[number][0];
-const filters = ["category", "view", "q", "condition", "scope", "active", "low", "custody"];
+const filters = ["category", "view", "q", "condition", "scope", "active", "low", "custody", "page"];
 
 export function inventoryHref(path: string, params: URLSearchParams = new URLSearchParams(), returnTo?: string) {
   const query = new URLSearchParams(params);
@@ -31,6 +31,7 @@ export function inventoryReturnTo(value: unknown, allowItem = true): string | un
       if (!entry) continue;
       if (field === "category" && !uuid.test(entry)) continue;
       if (field === "view" && !inventoryViews.some(([view]) => view === entry)) continue;
+      if (field === "page" && !/^\d{1,7}$/.test(entry)) continue;
       query.set(field, entry);
     }
     return inventoryHref(target.pathname, query);
