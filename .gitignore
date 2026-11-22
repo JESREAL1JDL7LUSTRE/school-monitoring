@@ -8,3 +8,7 @@ next-env.d.ts
 !.env.example
 .vercel/
 npm-debug.log*
+/playwright-report/
+/test-results/
+/supabase/.temp/
+/supabase/.branches/

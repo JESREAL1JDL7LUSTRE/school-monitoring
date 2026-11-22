@@ -1,0 +1,32 @@
+project_id = "school-admin-desk"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql", "./seeds/*.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+enable_signup = false
+
+[auth.email]
+enabled = true
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
