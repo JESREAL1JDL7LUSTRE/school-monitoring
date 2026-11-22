@@ -22,17 +22,21 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
     <div className="space-y-5">
       <PersonnelHeading title="Employees" actions={hasPermission(session, "personnel.write") &&
         <Button asChild><Link href="/employees/new">Add employee</Link></Button>} />
-      <form className="grid items-end gap-3 sm:grid-cols-[minmax(0,24rem)_minmax(0,16rem)_1fr]">
-        <Field label="Search employees"><Input variant="touch" type="search" name="q" defaultValue={query} placeholder="Name, employee ID or position" maxLength={160} /></Field>
-        <Field label="Filter by">
-          <NativeSelect name="filter" defaultValue={filter} size="touch" className="w-full">
-            {(Object.keys(personnelFilters) as PersonnelFilter[]).map((key) => (
-              <NativeSelectOption value={key} key={key}>{personnelFilterLabel(key, context)} ({filterPersonnel(staff, key, context).length})</NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Button type="submit" variant="outline" className="justify-self-end">Apply filters</Button>
-      </form>
+      <Card className="py-4 sm:py-5">
+        <CardContent className="px-4 sm:px-5">
+          <form className="grid items-end gap-x-4 gap-y-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+            <Field label="Search employees"><Input variant="touch" type="search" name="q" defaultValue={query} placeholder="Name, employee ID or position" maxLength={160} /></Field>
+            <Field label="Filter by">
+              <NativeSelect name="filter" defaultValue={filter} size="touch" className="w-full">
+                {(Object.keys(personnelFilters) as PersonnelFilter[]).map((key) => (
+                  <NativeSelectOption value={key} key={key}>{personnelFilterLabel(key, context)} ({filterPersonnel(staff, key, context).length})</NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Button type="submit" variant="outline" className="justify-self-end">Apply filters</Button>
+          </form>
+        </CardContent>
+      </Card>
       <Card className="py-3">
         <CardContent className="px-2 sm:px-4">
           <Table className="caption-top">

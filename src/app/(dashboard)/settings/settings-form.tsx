@@ -63,7 +63,11 @@ export const SettingsForm = ({ section, settings, logoUrl, canEdit }: {
           ))}
         </>}
       </fieldset>
-      {canEdit && <Button type="submit" disabled={pending} className="min-h-11">{pending ? "Saving…" : "Save settings"}</Button>}
+      {canEdit && (
+        <div className="flex justify-end border-t pt-4">
+          <Button type="submit" disabled={pending} className="min-h-11">{pending ? "Saving…" : "Save settings"}</Button>
+        </div>
+      )}
     </form>
   );
 };

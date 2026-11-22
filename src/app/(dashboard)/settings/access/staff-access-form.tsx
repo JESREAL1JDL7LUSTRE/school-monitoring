@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { roleLabels } from "@/modules/auth/permissions";
-import { saveStaffRole } from "@/modules/settings/actions";
+import { saveStaffRole, type SettingsActionState } from "@/modules/settings/actions";
 
 export const StaffAccessForm = () => {
-  const [state, action, pending] = useActionState(saveStaffRole, {});
+  const [operation, setOperation] = useState<"grant" | "revoke">("grant");
+  const [state, action, pending] = useActionState<SettingsActionState, FormData>(async (previous, form) => {
+    const result = await saveStaffRole(previous, form);
+    if (!result.error) setOperation("grant");
+    return result;
+  }, {});
   return (
     <Card>
       <CardHeader><CardTitle><h2>Change a role</h2></CardTitle></CardHeader>
@@ -33,13 +38,14 @@ export const StaffAccessForm = () => {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="operation">Access change</Label>
-              <NativeSelect id="operation" name="operation" size="touch" className="w-full">
+              <NativeSelect id="operation" name="operation" size="touch" className="w-full" value={operation}
+                onChange={(event) => setOperation(event.target.value === "revoke" ? "revoke" : "grant")}>
                 <NativeSelectOption value="grant">Assign role</NativeSelectOption>
                 <NativeSelectOption value="revoke">Remove role</NativeSelectOption>
               </NativeSelect>
             </div>
           </div>
-          <Button type="submit" disabled={pending} className="min-h-11">{pending ? "Saving…" : "Save staff access"}</Button>
+          <Button type="submit" variant={operation === "revoke" ? "destructive" : "default"} disabled={pending} className="min-h-11">{pending ? "Saving…" : "Save staff access"}</Button>
         </form>
       </CardContent>
     </Card>

@@ -53,7 +53,7 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
           {canWrite && (
             <details className="rounded-md border p-4">
               <summary className="mb-3 cursor-pointer text-sm font-medium">{employee.archived_at ? "Restore archived record" : "Archive employee record"}</summary>
-              <PersonnelForm action={changeArchive} submit={employee.archived_at ? "Restore employee" : "Archive employee"}>
+              <PersonnelForm action={changeArchive} submitVariant={employee.archived_at ? "outline" : "destructive"} submit={employee.archived_at ? "Restore employee" : "Archive employee"}>
                 <input type="hidden" name="employee_id" value={id} /><input type="hidden" name="version" value={employee.updated_at} />
                 <input type="hidden" name="operation" value={employee.archived_at ? "restore" : "archive"} />
                 <p className="text-sm text-muted-foreground">{employee.archived_at ? "Restoring returns this record to active lists." : "Archiving removes the employee from active lists and preserves personnel and property records."}</p>

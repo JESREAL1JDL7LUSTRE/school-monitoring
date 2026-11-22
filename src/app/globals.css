@@ -24,6 +24,7 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -49,13 +50,14 @@
 
 :root {
     --desk-sans: "Segoe UI", Aptos, Arial, sans-serif;
-    --background: oklch(0.968 0.012 163);
+    --desk-display: Georgia, "Times New Roman", serif;
+    --background: oklch(0.986 0.006 100);
     --foreground: oklch(0.294 0.031 178);
-    --card: oklch(1 0 0);
+    --card: oklch(0.964 0.018 157);
     --card-foreground: var(--foreground);
     --popover: oklch(1 0 0);
     --popover-foreground: var(--foreground);
-    --primary: oklch(0.498 0.099 160);
+    --primary: oklch(0.47 0.125 157);
     --primary-foreground: oklch(0.99 0.005 165);
     --secondary: oklch(0.932 0.024 166);
     --secondary-foreground: oklch(0.34 0.046 168);
@@ -63,7 +65,8 @@
     --muted-foreground: oklch(0.46 0.032 177);
     --accent: oklch(0.922 0.04 163);
     --accent-foreground: oklch(0.34 0.071 159);
-    --destructive: oklch(0.577 0.245 27.325);
+    --destructive: oklch(0.49 0.18 27);
+    --destructive-foreground: oklch(0.99 0 0);
     --border: oklch(0.88 0.019 166);
     --input: oklch(0.83 0.024 167);
     --ring: oklch(0.595 0.116 158);
@@ -73,11 +76,11 @@
     --chart-4: oklch(0.54 0.118 310);
     --chart-5: oklch(0.52 0.119 29);
     --radius: 0.75rem;
-    --sidebar: oklch(0.324 0.047 173);
+    --sidebar: oklch(0.29 0.025 163);
     --sidebar-foreground: oklch(0.981 0.013 161);
     --sidebar-primary: oklch(0.8 0.111 157);
     --sidebar-primary-foreground: var(--foreground);
-    --sidebar-accent: oklch(0.419 0.06 168);
+    --sidebar-accent: oklch(0.373 0.034 163);
     --sidebar-accent-foreground: var(--sidebar-foreground);
     --sidebar-border: oklch(0.465 0.042 173);
     --sidebar-ring: oklch(0.82 0.092 164);
@@ -100,7 +103,8 @@
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
+    --destructive: oklch(0.708 0.155 24);
+    --destructive-foreground: oklch(0.2 0.03 24);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
@@ -209,7 +213,7 @@
   }
 
   .desk-content h1, .desk-heading {
-    font-family: var(--desk-sans);
+    font-family: var(--desk-display);
     font-size: var(--desk-page-size, 1.875rem);
     font-weight: 600;
     letter-spacing: -0.025em;

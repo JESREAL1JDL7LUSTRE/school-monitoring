@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { readSettingsSection } from "@/modules/settings/fields";
 import { getSchoolLogoUrl, getSchoolSettings } from "@/modules/settings/queries";
@@ -17,8 +18,14 @@ const SettingsPage = async ({ searchParams }: PageProps<"/settings">) => {
         <h1 className="desk-heading">School settings</h1>
         {canEdit && <Button variant="outline" asChild><Link href="/settings/access">Manage staff access</Link></Button>}
       </header>
-      <SettingsNavigation active={section} />
-      <SettingsForm key={section} section={section} settings={settings} logoUrl={logoUrl} canEdit={canEdit} />
+      <Card className="gap-0 py-0">
+        <div className="px-4 sm:px-6">
+          <SettingsNavigation active={section} />
+        </div>
+        <CardContent className="px-4 py-5 sm:px-6 sm:py-6">
+          <SettingsForm key={section} section={section} settings={settings} logoUrl={logoUrl} canEdit={canEdit} />
+        </CardContent>
+      </Card>
     </div>
   );
 };

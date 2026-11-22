@@ -1,15 +1,16 @@
 "use client";
 
-import { startTransition, useActionState, type FormEvent, type ReactNode } from "react";
+import { startTransition, useActionState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { personnelFormInitial, type PersonnelAction } from "./validation";
 
-export function PersonnelForm({ action, children, submit, className, compact = false }: {
+export function PersonnelForm({ action, children, submit, className, compact = false, submitVariant }: {
   action: PersonnelAction;
   children: ReactNode;
   submit: string;
   className?: string;
   compact?: boolean;
+  submitVariant?: ComponentProps<typeof Button>["variant"];
 }) {
   const [state, dispatch, pending] = useActionState(action, personnelFormInitial);
 
@@ -23,7 +24,7 @@ export function PersonnelForm({ action, children, submit, className, compact = f
     <form action={dispatch} onSubmit={handleSubmit} className={className}>
       <fieldset disabled={pending} className={compact ? "space-y-2" : "space-y-4"}>
         {children}
-        <Button size={compact ? "sm" : "default"} variant={compact ? "outline" : "default"} type="submit">
+        <Button size={compact ? "sm" : "default"} variant={submitVariant ?? (compact ? "outline" : "default")} type="submit">
           {pending ? "Saving…" : submit}
         </Button>
       </fieldset>

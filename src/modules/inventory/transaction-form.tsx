@@ -114,7 +114,7 @@ export const InventoryTransactionForm = ({ kind, employees, items, returns, date
               </p>
             )}
             {rows.length > 1 && (
-              <Button type="button" size="sm" variant="outline" onClick={() => setRows((previous) => previous.filter((line) => line.id !== row.id))}>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setRows((previous) => previous.filter((line) => line.id !== row.id))}>
                 Remove line {number}
               </Button>
             )}
@@ -124,7 +124,7 @@ export const InventoryTransactionForm = ({ kind, employees, items, returns, date
       {grandTotal !== null && <p className="text-sm font-semibold tabular-nums">Grand total {money(grandTotal)}</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" disabled={rows.length >= 100} onClick={() => setRows([...rows, blankLine(nextRow.current++)])}>Add line</Button>
-        <Button type="submit" disabled={pending}>{pending ? "Posting…" : `Post ${kind}`}</Button>
+        <Button type="submit" variant={kind === "disposal" ? "destructive" : "default"} disabled={pending}>{pending ? "Posting…" : `Post ${kind}`}</Button>
       </div>
     </form>
   );

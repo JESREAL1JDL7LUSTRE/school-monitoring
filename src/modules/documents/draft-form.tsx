@@ -73,7 +73,7 @@ export function DraftForm({ template, employees, selectedEmployee, defaultDate, 
         </CardContent>
       </Card>
       {hasPreview ? <div className="min-w-0 space-y-3">
-        <div className="print:hidden"><PrintButton>Print preview</PrintButton></div>
+        <div className="print:hidden"><PrintButton variant="outline">Print preview</PrintButton></div>
         <DocumentPaper title={template.title} version={template.version} snapshot={draft} logoUrl={result.logoUrl} preview />
       </div> : <Card className="min-h-32 print:hidden"><CardContent className="text-muted-foreground">Complete the fields and select Preview draft to review the document.</CardContent></Card>}
     </div>
