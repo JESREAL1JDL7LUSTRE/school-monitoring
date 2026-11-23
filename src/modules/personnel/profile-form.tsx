@@ -9,7 +9,11 @@ import { Choices, Field } from "./ui";
 export function EmployeeForm(props: { employee: Employee; context?: never } | { employee?: never; context: PersonnelContext }) {
   const { employee, context } = props;
   return (
-    <PersonnelForm action={saveEmployee} submit={employee ? "Save employee" : "Add employee"}>
+    <PersonnelForm action={saveEmployee} submit={employee ? "Save employee" : "Add employee"} confirmation={employee ? {
+      title: "Save employee changes?",
+      description: `Update the personnel profile for ${employee.full_name}.`,
+      label: "Confirm save",
+    } : undefined}>
       {employee && <><input type="hidden" name="id" value={employee.id} /><input type="hidden" name="version" value={employee.updated_at} /></>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Employee ID"><Input name="employee_no" defaultValue={employee?.employee_no} required maxLength={40} /></Field>

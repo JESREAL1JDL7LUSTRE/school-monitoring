@@ -2,6 +2,7 @@ import { InventoryBackButton } from "@/modules/inventory/back-button";
 import { inventoryListHref, inventoryReturnTo } from "@/modules/inventory/return-navigation";
 import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
+import { recordId } from "@/lib/record-slug";
 import { requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
 import { inventoryKinds, type InventoryKind } from "@/modules/inventory/database";
@@ -24,7 +25,9 @@ const InventoryTransactionPage = async ({ params, searchParams }: {
     getSchoolSettings(),
   ]);
   const back = inventoryReturnTo(returnTo) ?? inventoryListHref(kind === "return" ? "issued" : "overview", category);
-  const available = items.filter((candidate) => !candidate.archived_at && (!category || candidate.category_id === category)
+  const categoryId = recordId(category);
+  const itemId = recordId(item);
+  const available = items.filter((candidate) => !candidate.archived_at && (!category || candidate.category_id === categoryId)
     && (kind !== "issue" || (candidate.balance > 0 && candidate.condition === "Serviceable"))
     && (kind !== "disposal" || (candidate.balance > 0 && candidate.condition === "Unserviceable")));
   const itemIds = new Set(available.map((row) => row.id));
@@ -47,7 +50,7 @@ const InventoryTransactionPage = async ({ params, searchParams }: {
       <Card>
         <CardContent>
           {canPost ? <InventoryTransactionForm kind={kind} employees={employees} items={available} returns={returnable}
-            date={dateInManila()} requestId={crypto.randomUUID()} returnTo={back} preferredItem={itemIds.has(item ?? "") ? item : undefined} thresholds={settings} />
+            date={dateInManila()} requestId={crypto.randomUUID()} returnTo={back} preferredItem={itemId && itemIds.has(itemId) ? itemId : undefined} thresholds={settings} />
             : <p className="text-muted-foreground">
               {kind === "return" ? "No outstanding issues are available to return." : "No eligible items or employees are available for this transaction."}
             </p>}

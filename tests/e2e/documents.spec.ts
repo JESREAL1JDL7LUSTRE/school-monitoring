@@ -7,7 +7,7 @@ test("personnel saves a Certificate of Employment snapshot and prints it without
   const purpose = "Synthetic appointment verification";
   await page.getByLabel("Purpose", { exact: true }).fill(purpose);
   await page.getByRole("button", { name: "Save draft" }).click();
-  await expect(page).toHaveURL(/forms\/[a-f\d-]+/);
+  await expect(page).toHaveURL(/forms\/certificate-of-employment--[\w-]{22}$/);
   await expect(page.getByRole("heading", { name: /Certificate of Employment/i })).toBeVisible();
   await expect(page.getByText(/Draft · School verification required/i)).toBeVisible();
   await expect(page.getByText(/Template version 1/i)).toBeVisible();

@@ -21,7 +21,7 @@ const routes = [
   ["Audit logs", "/logs?view=audit", "[aria-label='Audit history'] tbody tr"],
   ["Calendar", "/calendar?month=2026-11", "#calendar-month"],
   ["Forms", "/forms", "#main-content a[href*='template=']"],
-  ["Settings", "/settings", "#main-content input:not([type=hidden])"],
+  ["Settings", "/settings", "#main-content :is([data-settings-values], input:not([type=hidden]))"],
 ];
 
 async function login(page) {

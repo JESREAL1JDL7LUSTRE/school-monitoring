@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { RecordEditDialog } from "@/components/record-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { recordId, recordSlug, withRouteQuery } from "@/lib/record-slug";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { changeArchive } from "@/modules/personnel/actions";
 import { Checklist } from "@/modules/personnel/checklist";
@@ -11,11 +14,15 @@ import { getEmployeeProfile } from "@/modules/personnel/queries";
 import { formatPersonnelDate, formatSalary, personnelMetrics } from "@/modules/personnel/rules";
 import { PersonnelHeading, Status } from "@/modules/personnel/ui";
 
-export default async function EmployeePage({ params }: PageProps<"/employees/[id]">) {
+export default async function EmployeePage({ params, searchParams }: PageProps<"/employees/[id]">) {
   const session = await requirePermission("personnel.read");
-  const { id } = await params;
+  const { id: reference } = await params;
+  const id = recordId(reference);
+  if (!id) notFound();
   const profile = await getEmployeeProfile(id);
   const { employee, context, licenses, salaryHistory, nosiHistory, custody } = profile;
+  const canonical = recordSlug(employee.employee_no, id);
+  if (reference !== canonical) redirect(withRouteQuery(`/employees/${canonical}`, await searchParams));
   const canWrite = hasPermission(session, "personnel.write");
   const canEdit = canWrite && !employee.archived_at;
   const canUpload = hasPermission(session, "files.write") && !employee.archived_at;
@@ -49,17 +56,21 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
             </div>)}
           </dl>
           <p className="text-sm text-muted-foreground">Step, retirement, and loyalty dates use the school’s draft rules.</p>
-          {canEdit && <details className="rounded-md border p-4"><summary className="mb-3 cursor-pointer font-medium">Edit profile</summary><EmployeeForm employee={employee} /></details>}
-          {canWrite && (
-            <details className="rounded-md border p-4">
-              <summary className="mb-3 cursor-pointer text-sm font-medium">{employee.archived_at ? "Restore archived record" : "Archive employee record"}</summary>
-              <PersonnelForm action={changeArchive} submitVariant={employee.archived_at ? "outline" : "destructive"} submit={employee.archived_at ? "Restore employee" : "Archive employee"}>
-                <input type="hidden" name="employee_id" value={id} /><input type="hidden" name="version" value={employee.updated_at} />
-                <input type="hidden" name="operation" value={employee.archived_at ? "restore" : "archive"} />
-                <p className="text-sm text-muted-foreground">{employee.archived_at ? "Restoring returns this record to active lists." : "Archiving removes the employee from active lists and preserves personnel and property records."}</p>
-              </PersonnelForm>
-            </details>
-          )}
+          {canWrite && <div className="flex flex-wrap items-start gap-3 print:hidden">
+            {canEdit && <RecordEditDialog trigger="Edit profile" description={employee.full_name} wide>
+              <EmployeeForm employee={employee} />
+            </RecordEditDialog>}
+            <PersonnelForm action={changeArchive} submitVariant="outline" submit={employee.archived_at ? "Restore employee" : "Archive employee"}
+              confirmation={employee.archived_at ? {
+                title: "Restore employee?", description: `${employee.full_name} will return to active employee lists.`, label: "Restore employee",
+              } : {
+                title: "Archive employee?", description: `${employee.full_name} will leave active lists. Personnel and property history will be retained.`,
+                label: "Archive employee", destructive: true,
+              }}>
+              <input type="hidden" name="employee_id" value={id} /><input type="hidden" name="version" value={employee.updated_at} />
+              <input type="hidden" name="operation" value={employee.archived_at ? "restore" : "archive"} />
+            </PersonnelForm>
+          </div>}
         </CardContent>
       </Card>
       <Checklist profile={profile} canEdit={canEdit} canUpload={canUpload} />
@@ -68,7 +79,9 @@ export default async function EmployeePage({ params }: PageProps<"/employees/[id
         <CardHeader><CardTitle>Salary and step history</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <SalaryTable rows={salaryHistory} asOf={context.asOf} />
-          {canEdit && <details className="rounded-md border p-4"><summary className="mb-3 cursor-pointer font-medium">Add a salary change</summary><SalaryForm employeeId={id} asOf={context.asOf} /></details>}
+          {canEdit && <RecordEditDialog trigger="Add a salary change" description={employee.full_name} wide>
+            <SalaryForm employeeId={id} asOf={context.asOf} />
+          </RecordEditDialog>}
           {nosiHistory.length > 0 && <ul className="space-y-1 text-sm">{nosiHistory.map((entry) => <li key={entry.id}>NOSI due {formatPersonnelDate(entry.eligibility_date)} · {entry.status}</li>)}</ul>}
         </CardContent>
       </Card>

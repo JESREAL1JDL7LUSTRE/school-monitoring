@@ -51,7 +51,7 @@ export async function getPersonnelReport(key: PersonnelReportKey, showAll: boole
     const values = [attention ? "YES" : "", employee.employee_no, employee.full_name, employee.employment_status, employee.classification,
       formatPersonnelDate(date), definition.status(metrics), `${employee.checklist_done}/${employee.checklist_total}`,
       salary ? `${salary.grade} / ${salary.step}` : "—", employee.checklist_remarks, String(employee.custody_quantity)];
-    return { id: employee.id, attention, values };
+    return { id: employee.id, employeeNo: employee.employee_no, attention, values };
   });
 
   return {

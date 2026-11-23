@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/modules/auth/session";
+import { recordSlug, withRouteQuery } from "@/lib/record-slug";
 import { inventoryCategoryInput, inventoryCountInput, inventoryDocumentInput, inventoryItemInput } from "./validation";
 import { inventoryDetailFields } from "./rules";
 import { parseInventoryWorkbook } from "./workbook";
@@ -16,7 +17,7 @@ const updateInventoryPages = (items: readonly string[] = []) => {
   revalidatePath("/inventory");
   revalidatePath("/inventory/reports/[report]", "page");
   revalidatePath("/inventory/transactions/[kind]", "page");
-  for (const id of new Set(items)) revalidatePath(`/inventory/items/${id}`);
+  if (items.length) revalidatePath("/inventory/items/[id]", "page");
   revalidatePath("/");
   revalidatePath("/logs");
 };
@@ -38,7 +39,7 @@ export const saveInventoryItem = async (
     const { error } = await supabase.rpc("import_inventory_master", { p_rows: [{ ...item, opening_quantity }] });
     if (error) return errorState(error.code === "23505" ? "This item code is already used." : "Could not save this item.");
     updateInventoryPages();
-    redirect("/inventory?category=" + item.category_id + "&view=items");
+    redirect(withRouteQuery("/inventory", { category: recordSlug("category", item.category_id), view: "items" }));
   }
 
   const { data, error } = await supabase.rpc("save_inventory_item", {
@@ -117,7 +118,9 @@ export const postInventoryDocument = async (
     revalidatePath("/employees");
     revalidatePath("/employees/[id]", "page");
   }
-  redirect(inventoryHref("/inventory/documents/" + data, undefined, inventoryReturnTo(form.get("returnTo"))));
+  const { data: document } = await supabase.from("inventory_documents").select("document_no").eq("id", data).maybeSingle();
+  redirect(inventoryHref(`/inventory/documents/${recordSlug(document?.document_no ?? input.kind, data)}`,
+    undefined, inventoryReturnTo(form.get("returnTo"))));
 };
 
 export const savePhysicalCount = async (
@@ -132,7 +135,7 @@ export const savePhysicalCount = async (
   });
   if (error) return errorState(error.code === "P0001" ? error.message : "Could not save the physical count.");
   revalidatePath("/inventory");
-  revalidatePath(`/inventory/items/${input.item}`);
+  revalidatePath("/inventory/items/[id]", "page");
   for (const report of ["rpci", "rpcppe", "annex-a"]) revalidatePath(`/inventory/reports/${report}`);
   revalidatePath("/logs");
   return { message: "Physical count recorded." };

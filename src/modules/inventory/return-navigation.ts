@@ -1,5 +1,6 @@
+import { recordId } from "@/lib/record-slug";
+
 const origin = "https://inventory.invalid";
-const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 export const inventoryViews = [
   ["overview", "Overview"], ["items", "Item masterlist"], ["issued", "Issued items"],
   ["counts", "Physical counts"], ["reports", "Forms and reports"],
@@ -16,7 +17,7 @@ export function inventoryHref(path: string, params: URLSearchParams = new URLSea
 
 export function inventoryListHref(view: InventoryView, category?: string) {
   const params = new URLSearchParams({ view });
-  if (category && uuid.test(category)) params.set("category", category);
+  if (category && recordId(category)) params.set("category", category);
   return inventoryHref("/inventory", params);
 }
 
@@ -29,7 +30,7 @@ export function inventoryReturnTo(value: unknown, allowItem = true): string | un
     for (const field of filters) {
       const entry = target.searchParams.get(field);
       if (!entry) continue;
-      if (field === "category" && !uuid.test(entry)) continue;
+      if (field === "category" && !recordId(entry)) continue;
       if (field === "view" && !inventoryViews.some(([view]) => view === entry)) continue;
       if (field === "page" && !/^\d{1,7}$/.test(entry)) continue;
       query.set(field, entry);
@@ -37,7 +38,7 @@ export function inventoryReturnTo(value: unknown, allowItem = true): string | un
     return inventoryHref(target.pathname, query);
   }
   const itemId = target.pathname.slice("/inventory/items/".length);
-  if (allowItem && target.pathname.startsWith("/inventory/items/") && uuid.test(itemId)) {
+  if (allowItem && target.pathname.startsWith("/inventory/items/") && recordId(itemId)) {
     return inventoryHref(target.pathname, undefined, inventoryReturnTo(target.searchParams.get("returnTo"), false));
   }
 }

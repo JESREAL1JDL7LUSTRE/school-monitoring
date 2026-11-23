@@ -1,3 +1,4 @@
+import { RecordEditDialog } from "@/components/record-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +10,11 @@ import { formatPersonnelDate, formatSalary } from "./rules";
 
 function LicenseForm({ employeeId, license }: { employeeId: string; license?: EmployeeLicense }) {
   return (
-    <PersonnelForm action={saveLicense} submit={license ? "Save license" : "Add license"}>
+    <PersonnelForm action={saveLicense} submit={license ? "Save license" : "Add license"} confirmation={{
+      title: license ? "Save license changes?" : "Add this license?",
+      description: "Update the employee’s license history and expiry information.",
+      label: license ? "Confirm save" : "Confirm addition",
+    }}>
       <input name="employee_id" type="hidden" value={employeeId} />
       {license && <><input name="license_id" type="hidden" value={license.id} /><input name="version" type="hidden" value={license.updated_at} /></>}
       {!license && <input type="hidden" name="is_active" value="true" />}
@@ -35,11 +40,16 @@ export function LicenseHistory({ employeeId, licenses, canEdit }: { employeeId: 
               <p className="flex flex-wrap items-center gap-2 text-sm"><strong>{license.license_type}</strong> {license.license_number} · Expires {formatPersonnelDate(license.expiry_date)}
                 <Status>{license.is_active ? "Active" : "Inactive"}</Status>
               </p>
-              {canEdit && <details className="mt-2"><summary className="mb-3 cursor-pointer text-sm">Edit {license.license_type} license</summary><LicenseForm employeeId={employeeId} license={license} /></details>}
+              {canEdit && <div className="mt-2"><RecordEditDialog trigger={`Edit ${license.license_type} license`}
+                description={`${license.license_type} · Expires ${formatPersonnelDate(license.expiry_date)}`}>
+                <LicenseForm employeeId={employeeId} license={license} />
+              </RecordEditDialog></div>}
             </li>
           ))}
         </ul>
-        {canEdit && <details className="rounded-md border p-4"><summary className="mb-3 cursor-pointer text-sm font-medium">Add a license</summary><LicenseForm employeeId={employeeId} /></details>}
+        {canEdit && <RecordEditDialog trigger="Add a license" description="Record the license type, number, and expiry date.">
+          <LicenseForm employeeId={employeeId} />
+        </RecordEditDialog>}
       </CardContent>
     </Card>
   );
@@ -47,7 +57,11 @@ export function LicenseHistory({ employeeId, licenses, canEdit }: { employeeId: 
 
 export function SalaryForm({ employeeId, employees, asOf }: { employeeId?: string; employees?: Pick<Employee, "id" | "full_name" | "employee_no">[]; asOf: string }) {
   return (
-    <PersonnelForm action={appendSalary} submit="Record salary change">
+    <PersonnelForm action={appendSalary} submit="Record salary change" confirmation={{
+      title: "Record this salary change?",
+      description: "This adds an effective-dated entry to the employee’s salary and step history.",
+      label: "Confirm salary change",
+    }}>
       {employeeId ? <input name="employee_id" type="hidden" value={employeeId} /> : <EmployeePicker employees={employees ?? []} />}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Salary grade"><Input name="grade" type="number" min={1} max={33} required /></Field>

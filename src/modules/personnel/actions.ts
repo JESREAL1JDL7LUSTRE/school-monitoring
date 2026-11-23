@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requirePermission } from "@/modules/auth/session";
+import { recordSlug } from "@/lib/record-slug";
 import { concernCategories, concernPriorities, concernStatuses, nosiStatuses } from "./database";
 import { getNosiCycle } from "./queries";
 import { employeeDateMetrics, manilaDate } from "./rules";
 import { grade, money, mutationFailure, optionalDate, personnelFailure, profileSchema, stalePersonnel, step, uuid, version, type PersonnelActionState } from "./validation";
 
 function success(message: string, employeeId?: string): PersonnelActionState {
-  if (employeeId) revalidatePath(`/employees/${employeeId}`);
+  if (employeeId) revalidatePath("/employees/[id]", "page");
   for (const path of ["/", "/employees", "/nosi", "/logs", "/reports", "/forms", "/inventory"]) revalidatePath(path);
   revalidatePath("/inventory/transactions/[kind]", "page");
   return { ok: true, message };
@@ -44,7 +45,7 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
   const failure = mutationFailure(error, "This employee ID is already in use.");
   if (failure || !data) return failure ?? personnelFailure("The employee could not be created.");
   success("Employee added.", data);
-  redirect(`/employees/${data}`);
+  redirect(`/employees/${recordSlug(profile.data.employee_no, data)}`);
 }
 
 export async function changeArchive(_: PersonnelActionState, form: FormData) {

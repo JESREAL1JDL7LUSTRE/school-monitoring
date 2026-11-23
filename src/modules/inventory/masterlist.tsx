@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { RecordEditDialog } from "@/components/record-editor";
+import { recordSlug } from "@/lib/record-slug";
 import { inventoryHref } from "./return-navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,10 @@ export const InventoryMasterlist = ({ items, category, query, canWrite, settings
         <CardTitle><h2>Item masterlist</h2></CardTitle>
         <div className="flex flex-wrap gap-2">
           {canWrite && <Button asChild><Link href={inventoryHref("/inventory/items/new", filter, returnTo)}>Add item</Link></Button>}
+          {canWrite && <RecordEditDialog trigger="Import Excel" description="Use category names already listed in School Admin Desk.">
+            <a className="text-sm text-primary underline underline-offset-4" href={exportUrl("template")}>Download blank Excel template</a>
+            <InventoryImportForm />
+          </RecordEditDialog>}
           <Button asChild variant="outline"><a href={exportUrl("xlsx")}>Export Excel</a></Button>
           <Button asChild variant="outline"><a href={exportUrl("csv")}>Export backup CSV</a></Button>
           <Button asChild variant="outline"><Link href={inventoryHref("/inventory/reports/tags", filter, returnTo)}>Print all tags</Link></Button>
@@ -39,7 +45,7 @@ export const InventoryMasterlist = ({ items, category, query, canWrite, settings
         <InventoryTable headings={["Code", "Item", "Category", "Purchased or received", "On hand", "Unit cost", "Value", "Condition"]} rows={items.map((item) => ({
           id: item.id, columns: [
             item.item_code,
-            <Link key={item.id} href={inventoryHref(`/inventory/items/${item.id}`, undefined, returnTo)} className="font-medium text-primary underline underline-offset-4">{item.name}</Link>,
+            <Link key={item.id} href={inventoryHref(`/inventory/items/${recordSlug(item.item_code, item.id)}`, undefined, returnTo)} className="font-medium text-primary underline underline-offset-4">{item.name}</Link>,
             item.category.name,
             item.totalReceived,
             <span key={item.id} className="inline-flex items-center gap-2">{item.balance} {item.unit}
@@ -50,14 +56,6 @@ export const InventoryMasterlist = ({ items, category, query, canWrite, settings
           ],
         }))} empty="No items match these filters." />
         {pagination}
-        {canWrite && (
-          <details className="rounded-lg border p-4">
-            <summary className="cursor-pointer font-medium">Import Excel</summary>
-            <p className="my-3 text-sm text-muted-foreground">Use category names already listed in School Admin Desk. Imports create items and record opening stock as receipts.</p>
-            <p className="my-3"><a className="text-sm text-primary underline underline-offset-4" href={exportUrl("template")}>Download blank Excel template</a></p>
-            <InventoryImportForm />
-          </details>
-        )}
       </CardContent>
     </Card>
   );
@@ -90,7 +88,7 @@ export const InventoryIssuedSummary = ({ lines, items, canWrite, category, all, 
       <CardContent>
         <InventoryTable headings={["Issue document", "Item code", "Employee", "Date", "Issued", "Returned", "Outstanding"]} rows={lines.map((line) => ({
           id: String(line.issue_line_id), columns: [
-            <Link key={line.issue_line_id} className="text-primary underline" href={inventoryHref(`/inventory/documents/${line.document_id}`, undefined, returnTo)}>{line.document_no}</Link>,
+            <Link key={line.issue_line_id} className="text-primary underline" href={inventoryHref(`/inventory/documents/${recordSlug(line.document_no, line.document_id)}`, undefined, returnTo)}>{line.document_no}</Link>,
             codes.get(line.item_id) ?? "—", line.employee_name, line.transaction_date,
             line.issued_quantity, line.returned_quantity, line.outstanding,
           ],
@@ -121,7 +119,9 @@ export const InventoryCounts = ({ items, latest, canWrite, category, returnTo }:
       </div>
     </CardHeader>
     <CardContent className="space-y-5">
-      {canWrite && items.length > 0 && <InventoryCountForm items={items} date={dateInManila()} />}
+      {canWrite && items.length > 0 && <RecordEditDialog trigger="Add physical count" description="Enter the quantity observed during the count." wide>
+        <InventoryCountForm items={items} date={dateInManila()} />
+      </RecordEditDialog>}
       <InventoryTable headings={["Item", "Count date", "Per card", "On hand counted", "Variance", "Variance value"]} rows={items.map((item) => {
         const count = latest.get(item.id);
         return { id: item.id, columns: [item.name, count?.count_date ?? "—", count?.recorded_quantity ?? "—",
@@ -138,7 +138,7 @@ export const InventoryActivity = ({ documents, returnTo }: { documents: Inventor
     <CardContent>
       <InventoryTable headings={["Document", "Type", "Date", "Reference"]} rows={documents.map((document) => ({
         id: document.id, columns: [
-          <Link className="text-primary underline underline-offset-4" key={document.id} href={inventoryHref(`/inventory/documents/${document.id}`, undefined, returnTo)}>{document.document_no}</Link>,
+          <Link className="text-primary underline underline-offset-4" key={document.id} href={inventoryHref(`/inventory/documents/${recordSlug(document.document_no, document.id)}`, undefined, returnTo)}>{document.document_no}</Link>,
           document.kind, document.transaction_date, document.reference || "—",
         ],
       }))} empty="No transactions have been posted." />

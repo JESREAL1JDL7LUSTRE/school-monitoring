@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { RecordEditDialog } from "@/components/record-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { recordSlug, withRouteQuery } from "@/lib/record-slug";
 import { saveChecklist, saveChecklistReview, uploadEmployeeAttachment } from "./document-actions";
 import { checklistStatuses } from "./database";
 import { PersonnelForm } from "./form";
@@ -17,7 +19,7 @@ export function Checklist({ profile, canEdit, canUpload }: { profile: Awaited<Re
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><CardTitle>201 file checklist</CardTitle><CardDescription>{employee.checklist_done} of {employee.checklist_total} complete. N/A counts as reviewed.</CardDescription></div>
-          <Button variant="outline" asChild><Link href={`/forms?template=employee-201&employee=${employee.id}`}>Print this 201</Link></Button>
+          <Button variant="outline" asChild><Link href={withRouteQuery("/forms", { template: "employee-201", employee: recordSlug(employee.employee_no, employee.id) })}>Print this 201</Link></Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -49,18 +51,21 @@ export function Checklist({ profile, canEdit, canUpload }: { profile: Awaited<Re
               )}
               <div className="min-w-0">
                 {document.attachments.map((attachment) => (
-                  <a key={attachment.id} className="block truncate py-2 text-sm font-medium underline underline-offset-4" href={`/api/employee-documents/${attachment.id}`}>{attachment.file_name}</a>
+                  <a key={attachment.id} className="block truncate py-2 text-sm font-medium underline underline-offset-4" href={`/api/employee-documents/${recordSlug("attachment", attachment.id)}`}>{attachment.file_name}</a>
                 ))}
                 {canUpload && (
-                  <details>
-                    <summary className="cursor-pointer py-2 text-sm font-medium">Attach file</summary>
-                    <PersonnelForm action={uploadEmployeeAttachment} submit="Upload attachment" compact>
+                  <RecordEditDialog trigger="Attach file" description={document.name}>
+                    <PersonnelForm action={uploadEmployeeAttachment} submit="Upload attachment" confirmation={{
+                      title: "Upload this attachment?",
+                      description: `Add the file to the employee’s ${document.name} record.`,
+                      label: "Confirm upload",
+                    }}>
                       <input type="hidden" name="employee_id" value={employee.id} />
                       <input type="hidden" name="document_type_id" value={document.id} />
                       <Input type="file" name="file" aria-label={`${document.name} attachment`} accept=".pdf,.png,.jpg,.jpeg" required />
                       <p className="text-xs text-muted-foreground">PDF, PNG, or JPEG up to 10 MB.</p>
                     </PersonnelForm>
-                  </details>
+                  </RecordEditDialog>
                 )}
               </div>
             </li>

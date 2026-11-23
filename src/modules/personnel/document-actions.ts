@@ -14,8 +14,8 @@ const signatures = {
   "image/jpeg": [0xff, 0xd8, 0xff],
 };
 
-function saved(employeeId: string, message: string) {
-  revalidatePath(`/employees/${employeeId}`);
+function saved(message: string) {
+  revalidatePath("/employees/[id]", "page");
   for (const path of ["/", "/employees", "/logs", "/reports"]) revalidatePath(path);
   return { ok: true, message };
 }
@@ -31,7 +31,7 @@ export async function saveChecklist(_: PersonnelActionState, form: FormData) {
     ? await supabase.from("employee_documents").update({ status }).eq("employee_id", employee_id)
       .eq("document_type_id", document_type_id).eq("updated_at", String(expected)).select("id").maybeSingle()
     : await supabase.from("employee_documents").insert(input.data).select("id").single();
-  return mutationFailure(error, stalePersonnel) ?? (data ? saved(employee_id, "Checklist status saved.") : personnelFailure(stalePersonnel));
+  return mutationFailure(error, stalePersonnel) ?? (data ? saved("Checklist status saved.") : personnelFailure(stalePersonnel));
 }
 
 export async function saveChecklistReview(_: PersonnelActionState, form: FormData) {
@@ -44,7 +44,7 @@ export async function saveChecklistReview(_: PersonnelActionState, form: FormDat
   const { employee_id, version: expected, ...fields } = input.data;
   const { error, data } = await supabase.from("employees").update(fields).eq("id", employee_id)
     .eq("updated_at", expected).is("archived_at", null).select("id").maybeSingle();
-  return mutationFailure(error, stalePersonnel) ?? (data ? saved(employee_id, "Checklist review saved.") : personnelFailure(stalePersonnel));
+  return mutationFailure(error, stalePersonnel) ?? (data ? saved("Checklist review saved.") : personnelFailure(stalePersonnel));
 }
 
 export async function uploadEmployeeAttachment(_: PersonnelActionState, form: FormData) {
@@ -73,5 +73,5 @@ export async function uploadEmployeeAttachment(_: PersonnelActionState, form: Fo
     await storage.remove([storagePath]);
     return personnelFailure("The upload could not be linked to the checklist. Refresh the page and retry.");
   }
-  return saved(employee_id, "Attachment uploaded.");
+  return saved("Attachment uploaded.");
 }

@@ -9,6 +9,7 @@ import { getTemplate, templates, type Template } from "@/modules/documents/catal
 import { DraftForm } from "@/modules/documents/draft-form";
 import { canAccessForm, listGeneratedDocuments } from "@/modules/documents/queries";
 import { notFound, redirect } from "next/navigation";
+import { recordId, recordSlug, withRouteQuery } from "@/lib/record-slug";
 
 function TemplateCatalog({ entries }: { entries: Template[] }) {
   const groups = new Map<string, Template[]>();
@@ -41,7 +42,12 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
     if (template.href) redirect(template.href);
     const directory = template.employee ? await getPersonnelDirectory() : [];
     const employees = directory.map((entry) => ({ id: entry.id, label: `${entry.full_name} · ${entry.employee_no}` }));
-    const selected = employees.find(({ id }) => id === params.employee)?.id ?? "";
+    const selectedId = recordId(params.employee);
+    const selected = directory.find(({ id }) => id === selectedId);
+    if (selected) {
+      const reference = recordSlug(selected.employee_no, selected.id);
+      if (params.employee !== reference) redirect(withRouteQuery("/forms", { ...params, employee: reference }));
+    }
 
     return <div className="space-y-5">
       <header className="space-y-3 print:hidden">
@@ -49,7 +55,7 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
         <h1 className="desk-heading">{template.title}</h1>
         <p className="text-muted-foreground">Draft template · School verification required</p>
       </header>
-      <DraftForm key={template.slug} template={template} employees={employees} selectedEmployee={selected} defaultDate={manilaDate()} canSave={canAccessForm(session, template.scope, "write")} />
+      <DraftForm key={template.slug} template={template} employees={employees} selectedEmployee={selected?.id ?? ""} defaultDate={manilaDate()} canSave={canAccessForm(session, template.scope, "write")} />
     </div>;
   }
 
@@ -62,7 +68,7 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
       <CardHeader><CardTitle>Saved drafts</CardTitle></CardHeader>
       <CardContent>
         <div className="divide-y">
-          {drafts.length ? drafts.map((draft) => <Link key={draft.id} href={`/forms/${draft.id}`} className="desk-count-row flex min-h-11 flex-wrap items-center justify-between gap-2 py-1">
+          {drafts.length ? drafts.map((draft) => <Link key={draft.id} href={`/forms/${recordSlug(draft.template_slug, draft.id)}`} className="desk-count-row flex min-h-11 flex-wrap items-center justify-between gap-2 py-1">
             <span className="flex items-center gap-2"><FileText size={16} aria-hidden />{draft.title}</span><span className="text-sm text-muted-foreground">{formatPersonnelDate(draft.created_at)}</span>
           </Link>) : <p className="text-sm text-muted-foreground">No saved drafts on this page.</p>}
         </div>

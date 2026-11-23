@@ -2,6 +2,7 @@
 
 import { notFound, redirect } from "next/navigation";
 import { requireSession } from "@/modules/auth/session";
+import { recordSlug } from "@/lib/record-slug";
 import { getEmployeeDraftProfile, getPersonnelOverview } from "@/modules/personnel/queries";
 import { getSchoolLogoUrl, getSchoolSettings } from "@/modules/settings/queries";
 import { getTemplate } from "./catalog";
@@ -38,5 +39,5 @@ export async function submitDraft(slug: string, _previous: DraftResult, form: Fo
     p_slug: template.slug, p_version: template.version, p_employee_id: input.employeeId, p_snapshot: snapshot,
   });
   if (error || !data) return { error: "Could not save the draft. Try again." };
-  redirect(`/forms/${data}`);
+  redirect(`/forms/${recordSlug(template.slug, data)}`);
 }

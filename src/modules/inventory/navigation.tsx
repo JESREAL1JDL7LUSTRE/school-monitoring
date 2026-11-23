@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { recordSlug } from "@/lib/record-slug";
 import { inventoryKinds, type InventoryCategory, type InventoryKind } from "./database";
 import { inventoryKindLabels } from "./rules";
 import { inventoryHref, type InventoryView } from "./return-navigation";
@@ -50,7 +51,7 @@ export function InventoryCategoryNavigation({ categories, selected, activeView, 
             </Button>
             {categories.map(({ id, name }) => (
               <Button asChild key={id} variant={id === selected?.id ? "secondary" : "ghost"} className="h-auto min-h-11 max-w-full px-3 whitespace-normal text-left">
-                <Link href={categoryHref(id)} aria-current={id === selected?.id ? "page" : undefined}>{name}</Link>
+                <Link href={categoryHref(recordSlug(name, id))} aria-current={id === selected?.id ? "page" : undefined}>{name}</Link>
               </Button>
             ))}
           </nav>
@@ -67,7 +68,7 @@ export function InventoryCategoryTools({ category, filters, canWrite, returnTo }
   returnTo: string;
 }) {
   const reports: ReadonlyArray<readonly [string, string]> = category ? reportTools[category.category_type] : [];
-  const transactionParams = new URLSearchParams(category ? { category: category.id } : {});
+  const transactionParams = new URLSearchParams(category ? { category: recordSlug(category.name, category.id) } : {});
   if (!canWrite && !reports.length) return null;
 
   return (

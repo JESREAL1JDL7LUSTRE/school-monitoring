@@ -1,5 +1,59 @@
 import { expect, test } from "@playwright/test";
+import { recordId, recordSlug } from "../../src/lib/record-slug";
 import { databaseAs, employeeId, loginAs } from "./fixtures";
+
+test("profile edits require confirmation and old employee URLs open the same record", async ({ page }) => {
+  const database = await databaseAs("personnel");
+  const { data: employee, error } = await database.from("employees").select("employee_no,position").eq("id", employeeId).single();
+  if (error || !employee) throw new Error("The synthetic employee is missing.");
+  const path = `/employees/${recordSlug(employee.employee_no, employeeId)}`;
+  const editedPosition = `${employee.position.slice(0, 128)} (dialog test)`;
+  await loginAs(page, "personnel");
+  await page.goto(`/employees/${employeeId}?source=bookmark`);
+  await expect(page).toHaveURL((url) => url.pathname === path && url.searchParams.get("source") === "bookmark");
+
+  const open = page.getByRole("button", { name: "Edit profile" });
+  const editor = page.getByRole("dialog", { name: "Edit profile" });
+  const confirmation = page.getByRole("alertdialog", { name: "Save employee changes?" });
+  const position = editor.getByLabel("Position");
+  const save = editor.getByRole("button", { name: "Save employee" });
+  const confirm = confirmation.getByRole("button", { name: "Confirm save" });
+  const goBack = confirmation.getByRole("button", { name: "Go back" });
+  const currentPosition = async () => {
+    const { data } = await database.from("employees").select("position").eq("id", employeeId).single();
+    return data?.position;
+  };
+
+  try {
+    await open.focus();
+    await page.keyboard.press("Enter");
+    await expect(editor).toBeVisible();
+    await position.fill(editedPosition);
+    await save.click();
+    await expect(confirmation).toBeVisible();
+    await expect(goBack).toBeFocused();
+    expect(await currentPosition()).toBe(employee.position);
+    await goBack.click();
+    await expect(confirmation).toBeHidden();
+    await expect(position).toHaveValue(editedPosition);
+    await expect(save).toBeFocused();
+    await save.click();
+    await confirm.click();
+    await expect(editor).toBeHidden();
+    await expect(page.getByText("Employee record saved.")).toBeVisible();
+    await expect(open).toBeFocused();
+    expect(await currentPosition()).toBe(editedPosition);
+  } finally {
+    if (await currentPosition() === editedPosition) {
+      await page.goto(path);
+      await open.click();
+      await position.fill(employee.position);
+      await save.click();
+      await confirm.click();
+      await expect(editor).toBeHidden();
+    }
+  }
+});
 
 test("personnel follows a dashboard filter, updates a checklist and downloads a private attachment", async ({ page, request, browser }) => {
   await loginAs(page, "personnel");
@@ -28,14 +82,16 @@ test("personnel follows a dashboard filter, updates a checklist and downloads a 
 
   await page.reload();
   await expect(status).toHaveValue(newStatus);
-  await row.getByText("Attach file", { exact: true }).click();
+  await row.getByRole("button", { name: "Attach file" }).click();
+  const upload = page.getByRole("dialog", { name: "Attach file" });
   const fileName = "synthetic-201-" + Date.now() + ".pdf";
-  await row.getByLabel("Appointment Papers (CSC Form 33) attachment").setInputFiles({
+  await upload.getByLabel("Appointment Papers (CSC Form 33) attachment").setInputFiles({
     name: fileName,
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.4\n% Synthetic attachment test\n%%EOF\n", "ascii"),
   });
-  await row.getByRole("button", { name: "Upload attachment" }).click();
+  await upload.getByRole("button", { name: "Upload attachment" }).click();
+  await page.getByRole("alertdialog", { name: "Upload this attachment?" }).getByRole("button", { name: "Confirm upload" }).click();
   await expect(row.getByText("Attachment uploaded.")).toBeVisible();
   const attachment = row.getByRole("link", { name: fileName });
   await expect(attachment).toBeVisible();
@@ -48,7 +104,7 @@ test("personnel follows a dashboard filter, updates a checklist and downloads a 
   expect(downloaded.ok()).toBe(true);
   expect(await downloaded.text()).toContain("Synthetic attachment test");
   const metadata = await (await databaseAs("personnel")).from("employee_attachments")
-    .select("storage_path").eq("id", url!.split("/").at(-1) ?? "").single();
+    .select("storage_path").eq("id", recordId(url!.split("/").at(-1)) ?? "").single();
   expect(metadata.error).toBeNull();
   if (!metadata.data) throw new Error("The uploaded attachment has no metadata.");
   const auditorDatabase = await databaseAs("auditor");

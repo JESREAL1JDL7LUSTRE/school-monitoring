@@ -27,9 +27,13 @@ test("school identity is refreshed after a save and is shared across authorized 
 
   const saveName = async (name: string) => {
     await page.goto("/settings?section=identity");
-    await page.getByLabel("School name", { exact: true }).fill(name);
-    await page.getByRole("button", { name: "Save settings" }).click();
+    await page.getByRole("button", { name: "Edit settings" }).click();
+    const dialog = page.getByRole("dialog", { name: "Edit school identity" });
+    await dialog.getByLabel("School name", { exact: true }).fill(name);
+    await dialog.getByRole("button", { name: "Save settings" }).click();
+    await page.getByRole("alertdialog", { name: "Save school settings?" }).getByRole("button", { name: "Confirm save" }).click();
     await expect(page.getByText("School settings saved.")).toBeVisible();
+    await expect(dialog).toBeHidden();
   };
 
   try {
@@ -37,6 +41,9 @@ test("school identity is refreshed after a save and is shared across authorized 
     await expect(page.locator(identity)).toContainText(updated);
     await reader.reload();
     await expect(reader.locator(identity)).toContainText(updated);
+    await reader.goto("/settings");
+    await expect(reader.locator("[data-settings-values]")).toContainText(updated);
+    await expect(reader.getByRole("button", { name: "Edit settings" })).toHaveCount(0);
   } finally {
     await saveName(original.school_name);
     await reader.close();

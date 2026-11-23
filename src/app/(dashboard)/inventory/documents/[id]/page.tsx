@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { recordId, recordSlug, withRouteQuery } from "@/lib/record-slug";
 import { inventoryReturnTo } from "@/modules/inventory/return-navigation";
 import { getInventoryDocument } from "@/modules/inventory/queries";
 import { inventorySnapshot } from "@/modules/inventory/snapshot";
@@ -12,15 +13,19 @@ const formTitles: Record<string, string> = {
 };
 
 const InventoryDocumentPage = async ({ params, searchParams }: PageProps<"/inventory/documents/[id]">) => {
-  const [{ id }, { returnTo }] = await Promise.all([params, searchParams]);
+  const [{ id: reference }, search] = await Promise.all([params, searchParams]);
+  const id = recordId(reference);
+  if (!id) notFound();
   const document = await getInventoryDocument(id);
+  const canonical = recordSlug(document.document_no, id);
+  if (reference !== canonical) redirect(withRouteQuery(`/inventory/documents/${canonical}`, search));
   if (document.template_version !== 1) notFound();
   const snapshot = inventorySnapshot.parse(document.snapshot);
   const isReturn = document.kind === "return";
   const total = snapshot.lines.reduce((sum, line) => sum + line.quantity * line.unit_cost, 0);
   return (
     <InventoryPrintSheet title={formTitles[document.form_type] ?? document.form_type} school={snapshot.school}
-      details={`${document.document_no} · ${document.transaction_date} · Template version ${document.template_version}`} signature="custody" inventoryBack={inventoryReturnTo(returnTo)}>
+      details={`${document.document_no} · ${document.transaction_date} · Template version ${document.template_version}`} signature="custody" inventoryBack={inventoryReturnTo(search.returnTo)}>
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         {snapshot.employee_name && <div><dt className="font-semibold">Employee</dt><dd>{snapshot.employee_name}</dd></div>}
         {document.reference && <div><dt className="font-semibold">Reference or notes</dt><dd>{document.reference}</dd></div>}

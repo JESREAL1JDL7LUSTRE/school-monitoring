@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { recordId } from "../../src/lib/record-slug";
 import { manilaDate } from "../../src/modules/personnel/rules";
 import { databaseAs, employeeId, laptopId, loginAs } from "./fixtures";
 
@@ -75,8 +76,8 @@ test("inventory issues and returns stock with a ledger and employee custody", as
   await page.getByLabel("Quantity 1").fill("2");
   await page.getByLabel("Reference or notes").fill(reference);
   await page.getByRole("button", { name: "Post issue" }).click();
-  await expect(page).toHaveURL(/inventory\/documents\/[a-f\d-]+/);
-  const issueDocumentId = new URL(page.url()).pathname.split("/").at(-1) ?? "";
+  await expect(page).toHaveURL(/inventory\/documents\/[\w-]+--[\w-]{22}(?:\?|$)/);
+  const issueDocumentId = recordId(new URL(page.url()).pathname.split("/").at(-1)) ?? "";
   const { data: issue, error: issueError } = await db.from("inventory_issued_lines").select("*").eq("document_id", issueDocumentId).single();
   expect(issueError).toBeNull();
   expect(issue).toMatchObject({ employee_id: employeeId, item_id: laptopId, form_type: "ICS", issued_quantity: 2, outstanding: 2 });
@@ -97,7 +98,7 @@ test("inventory issues and returns stock with a ledger and employee custody", as
   await page.getByLabel("Issued line 1").selectOption(issue.issue_line_id + ":" + laptopId);
   await page.getByLabel("Quantity 1").fill("1");
   await page.getByRole("button", { name: "Post return" }).click();
-  await expect(page).toHaveURL(/inventory\/documents\/[a-f\d-]+/);
+  await expect(page).toHaveURL(/inventory\/documents\/[\w-]+--[\w-]{22}(?:\?|$)/);
   const returns = await db.from("inventory_issued_lines").select("returned_quantity,outstanding").eq("issue_line_id", issue.issue_line_id).single();
   expect(returns.data).toMatchObject({ returned_quantity: 1, outstanding: 1 });
   expect(await lookupBalance()).toBe(startingBalance - 1);
@@ -113,7 +114,7 @@ test("inventory issues and returns stock with a ledger and employee custody", as
   await page.getByLabel("Issued line 1").selectOption(issue.issue_line_id + ":" + laptopId);
   await page.getByLabel("Quantity 1").fill("1");
   await page.getByRole("button", { name: "Post return" }).click();
-  await expect(page).toHaveURL(/inventory\/documents\/[a-f\d-]+/);
+  await expect(page).toHaveURL(/inventory\/documents\/[\w-]+--[\w-]{22}(?:\?|$)/);
   expect(await lookupBalance()).toBe(startingBalance);
 
   const closed = await db.from("inventory_issued_lines").select("returned_quantity,outstanding").eq("issue_line_id", issue.issue_line_id).single();

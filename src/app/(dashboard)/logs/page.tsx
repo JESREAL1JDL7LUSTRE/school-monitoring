@@ -1,8 +1,6 @@
-import type { ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { RecordEditDialog } from "@/components/record-editor";
 import { TablePageLinks } from "@/components/table-page-links";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,17 +14,6 @@ import { SalaryForm, SalaryTable } from "@/modules/personnel/history";
 import { getConcerns, getPersonnelContext, getPersonnelDirectory, getSalaryHistory } from "@/modules/personnel/queries";
 import { formatPersonnelDate } from "@/modules/personnel/rules";
 import { Choices, EmployeePicker, Field, PersonnelHeading, Status } from "@/modules/personnel/ui";
-
-function LogEntry({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <details className="group">
-      <Button asChild variant="outline" className="cursor-pointer [&::-webkit-details-marker]:hidden">
-        <summary className="list-none"><Plus aria-hidden />{label}</summary>
-      </Button>
-      <div className="mt-4 max-w-3xl border-b pb-5">{children}</div>
-    </details>
-  );
-}
 
 export default async function LogsPage({ searchParams }: PageProps<"/logs">) {
   const session = await requirePermission("personnel.read");
@@ -55,8 +42,11 @@ export default async function LogsPage({ searchParams }: PageProps<"/logs">) {
 
         {tab === "concerns" && (
           <CardContent role="region" aria-label="Concern logs" className="space-y-4 px-2 py-4 sm:px-4">
-            {canEdit && active.length > 0 && <LogEntry label="Record a concern">
-              <PersonnelForm action={addConcern} submit="Save concern">
+            {canEdit && active.length > 0 && <RecordEditDialog trigger="Record a concern"
+              description="Choose an employee and record the details for staff follow-up." wide>
+              <PersonnelForm action={addConcern} submit="Save concern" confirmation={{
+                title: "Save this concern?", description: "Add the concern to the logs for staff follow-up.", label: "Confirm save",
+              }}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <EmployeePicker employees={active} />
                   <Field label="Category"><Choices name="category" values={concernCategories} /></Field>
@@ -65,7 +55,7 @@ export default async function LogsPage({ searchParams }: PageProps<"/logs">) {
                 </div>
                 <Field label="Details"><Textarea name="description" maxLength={2000} required /></Field>
               </PersonnelForm>
-            </LogEntry>}
+            </RecordEditDialog>}
             <Table>
               <TableHeader><TableRow>{["Date", "Employee", "Concern", "Assigned to", "Priority", "Status", "Resolved on"].map((label) => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader>
               <TableBody>
@@ -87,7 +77,10 @@ export default async function LogsPage({ searchParams }: PageProps<"/logs">) {
           </CardContent>
         )}
         {tab === "salary" && context && <CardContent role="region" aria-label="Salary changes" className="space-y-4 px-2 py-4 sm:px-4">
-            {canEdit && active.length > 0 && <LogEntry label="Add salary change"><SalaryForm employees={active} asOf={context.asOf} /></LogEntry>}
+            {canEdit && active.length > 0 && <RecordEditDialog trigger="Add salary change"
+              description="Choose the employee and enter the new salary and effective date." wide>
+              <SalaryForm employees={active} asOf={context.asOf} />
+            </RecordEditDialog>}
             <SalaryTable rows={salaryHistory} staff={staff} asOf={context.asOf} />
         </CardContent>}
         {audit && <CardContent role="region" aria-label="Audit history" className="px-2 py-3 sm:px-4"><Table>

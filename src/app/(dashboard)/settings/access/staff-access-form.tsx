@@ -1,53 +1,63 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { EditorCancel, RecordEditDialog, ReviewableForm, useRecordAction } from "@/components/record-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { roleLabels } from "@/modules/auth/permissions";
+import { roleLabels, type Role } from "@/modules/auth/permissions";
 import { saveStaffRole, type SettingsActionState } from "@/modules/settings/actions";
 
-export const StaffAccessForm = () => {
+export function StaffAccessForm() {
+  return <RecordEditDialog trigger="Change a role" description="Choose a staff account and the role to assign or remove." wide>
+    <StaffRoleEditor />
+  </RecordEditDialog>;
+}
+
+function StaffRoleEditor() {
   const [operation, setOperation] = useState<"grant" | "revoke">("grant");
-  const [state, action, pending] = useActionState<SettingsActionState, FormData>(async (previous, form) => {
-    const result = await saveStaffRole(previous, form);
-    if (!result.error) setOperation("grant");
-    return result;
-  }, {});
+  const [state, action, pending] = useRecordAction(saveStaffRole, {} as SettingsActionState, (result) => result.message);
   return (
-    <Card>
-      <CardHeader><CardTitle><h2>Change a role</h2></CardTitle></CardHeader>
-      <CardContent>
-        <form action={action} className="space-y-4">
-          {state.error && <Alert variant="destructive"><AlertDescription>{state.error}</AlertDescription></Alert>}
-          {state.message && <Alert role="status"><AlertDescription>{state.message}</AlertDescription></Alert>}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="grid gap-2">
-              <Label htmlFor="target_email">Staff email</Label>
-              <Input variant="touch" id="target_email" name="target_email" type="email" autoComplete="off" required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="target_role">Role</Label>
-              <NativeSelect id="target_role" name="target_role" size="touch" className="w-full" defaultValue="" required>
-                <NativeSelectOption value="" disabled>Choose a role</NativeSelectOption>
-                {Object.entries(roleLabels).map(([role, label]) => <NativeSelectOption key={role} value={role}>{label}</NativeSelectOption>)}
-              </NativeSelect>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="operation">Access change</Label>
-              <NativeSelect id="operation" name="operation" size="touch" className="w-full" value={operation}
-                onChange={(event) => setOperation(event.target.value === "revoke" ? "revoke" : "grant")}>
-                <NativeSelectOption value="grant">Assign role</NativeSelectOption>
-                <NativeSelectOption value="revoke">Remove role</NativeSelectOption>
-              </NativeSelect>
-            </div>
-          </div>
-          <Button type="submit" variant={operation === "revoke" ? "destructive" : "default"} disabled={pending} className="min-h-11">{pending ? "Saving…" : "Save staff access"}</Button>
-        </form>
-      </CardContent>
-    </Card>
+    <ReviewableForm action={action} pending={pending} className="space-y-4" confirmation={(form) => {
+      const remove = form.get("operation") === "revoke";
+      const role = roleLabels[String(form.get("target_role")) as Role];
+      const email = String(form.get("target_email")).trim();
+      return {
+        title: remove ? "Remove this staff role?" : "Assign this staff role?",
+        description: remove ? `Remove the ${role} role from ${email}.` : `Assign the ${role} role to ${email}.`,
+        label: remove ? "Remove role" : "Assign role",
+        destructive: remove,
+      };
+    }}>
+      {state.error && <Alert variant="destructive"><AlertDescription>{state.error}</AlertDescription></Alert>}
+      {state.message && <Alert role="status"><AlertDescription>{state.message}</AlertDescription></Alert>}
+      <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2">
+          <Label htmlFor="target_email">Staff email</Label>
+          <Input variant="touch" id="target_email" name="target_email" type="email" autoComplete="off" required />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="target_role">Role</Label>
+          <NativeSelect id="target_role" name="target_role" size="touch" className="w-full" defaultValue="" required>
+            <NativeSelectOption value="" disabled>Choose a role</NativeSelectOption>
+            {Object.entries(roleLabels).map(([role, label]) => <NativeSelectOption key={role} value={role}>{label}</NativeSelectOption>)}
+          </NativeSelect>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="operation">Access change</Label>
+          <NativeSelect id="operation" name="operation" size="touch" className="w-full" value={operation}
+            onChange={(event) => setOperation(event.target.value === "revoke" ? "revoke" : "grant")}>
+            <NativeSelectOption value="grant">Assign role</NativeSelectOption>
+            <NativeSelectOption value="revoke">Remove role</NativeSelectOption>
+          </NativeSelect>
+        </div>
+      </fieldset>
+      <div className="flex flex-wrap justify-end gap-2">
+        <EditorCancel disabled={pending} />
+        <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Review change"}</Button>
+      </div>
+    </ReviewableForm>
   );
-};
+}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { recordId, recordSlug } from "@/lib/record-slug";
 import { requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
 import { InventoryPrintSheet } from "@/modules/inventory/print-sheet";
@@ -26,7 +27,11 @@ const InventoryReportPage = async ({ params, searchParams }: {
   await requirePermission("inventory.read");
   const [{ report }, filters, settings, { items, categories }] = await Promise.all([params, searchParams, getSchoolSettings(), getInventoryMaster()]);
   if (!Object.hasOwn(reportTitles, report)) notFound();
-  const category = categories.find(({ id }) => id === filters.category);
+  const categoryId = recordId(filters.category);
+  const itemId = recordId(filters.item);
+  const category = categories.find(({ id }) => id === categoryId);
+  const categoryReference = category ? recordSlug(category.name, category.id) : "";
+  const requestedItem = items.find(({ id }) => id === itemId);
   const q = textValue(filters.q)?.toLowerCase();
   const from = dateValue(filters.from);
   const through = dateValue(filters.through);
@@ -36,7 +41,7 @@ const InventoryReportPage = async ({ params, searchParams }: {
   const reportDate = through ?? settings.reference_date ?? dateInManila();
   const hasDates = ["rsmi", "waste", "annex-1", "issued"].includes(report);
   const isCount = ["rpci", "rpcppe", "annex-a"].includes(report);
-  const selected = items.filter((row) => (!category || row.category_id === category.id) && (!filters.item || row.id === filters.item)
+  const selected = items.filter((row) => (!category || row.category_id === category.id) && (!filters.item || row.id === itemId)
     && (!q || `${row.item_code} ${row.name}`.toLowerCase().includes(q)));
   const active = selected.filter((row) => !row.archived_at);
   const property = active.filter((row) => classifyItem(row, row.category.category_type, settings).form === "PAR");
@@ -135,25 +140,26 @@ const InventoryReportPage = async ({ params, searchParams }: {
   };
 
   return <InventoryPrintSheet title={title} school={settings} details={[category?.name, `Prepared as of ${reportDate}`].filter(Boolean).join(" · ")}
-    signature={report === "tags" ? "none" : "inventory"} inventoryBack={inventoryReturnTo(filters.returnTo) ?? inventoryListHref("reports", category?.id)}
+    signature={report === "tags" ? "none" : "inventory"} inventoryBack={inventoryReturnTo(filters.returnTo) ?? inventoryListHref("reports", categoryReference)}
     controls={
       <form className="flex flex-wrap items-end gap-3">
         <input type="hidden" name="returnTo" value={inventoryReturnTo(filters.returnTo) ?? ""} />
         <input type="hidden" name="q" value={textValue(filters.q) ?? ""} />
         <div className="grid w-full gap-2 sm:w-auto">
           <Label htmlFor="category">Category</Label>
-          <NativeSelect id="category" name="category" size="touch" className="w-full max-w-full" defaultValue={category?.id ?? ""}>
+          <NativeSelect id="category" name="category" size="touch" className="w-full max-w-full" defaultValue={categoryReference}>
             <NativeSelectOption value="">All categories</NativeSelectOption>
-            {categories.map((row) => <NativeSelectOption key={row.id} value={row.id}>{row.name}</NativeSelectOption>)}
+            {categories.map((row) => <NativeSelectOption key={row.id} value={recordSlug(row.name, row.id)}>{row.name}</NativeSelectOption>)}
           </NativeSelect>
         </div>
         {["building-card","stock-card","tags"].includes(report) && (
           <div className="grid w-full min-w-0 max-w-full gap-2 sm:max-w-80">
             <Label htmlFor="item">Item</Label>
-            <NativeSelect id="item" name="item" size="touch" className="w-full max-w-full" defaultValue={filters.item ?? ""}>
+            <NativeSelect id="item" name="item" size="touch" className="w-full max-w-full"
+              defaultValue={requestedItem ? recordSlug(requestedItem.item_code, requestedItem.id) : ""}>
               <NativeSelectOption value="">{report === "tags" ? "All items" : "First matching item"}</NativeSelectOption>
               {(report === "building-card" ? items.filter((row) => row.category.category_type === "building") : items).map((row) => (
-                <NativeSelectOption key={row.id} value={row.id}>{row.item_code} · {row.name}</NativeSelectOption>
+                <NativeSelectOption key={row.id} value={recordSlug(row.item_code, row.id)}>{row.item_code} · {row.name}</NativeSelectOption>
               ))}
             </NativeSelect>
           </div>

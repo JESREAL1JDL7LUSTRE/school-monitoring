@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { recordId, recordSlug } from "@/lib/record-slug";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
 import { InventoryActivity, InventoryCounts, InventoryIssuedSummary, InventoryMasterlist } from "@/modules/inventory/masterlist";
@@ -35,9 +36,10 @@ const InventoryPage = async ({ searchParams }: {
   const match = typeof q === "string" ? q.trim() : "";
   const activeView = inventoryViews.find(([value]) => value === view)?.[0] ?? "overview";
   const selectedCondition = inventoryConditions.find((value) => value === condition);
+  const categoryId = recordId(category);
   const page = tablePage(pageParam);
   const dbFilters = {
-    p_category: typeof category === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(category) ? category : undefined,
+    p_category: categoryId,
     p_q: match, p_condition: selectedCondition, p_active: activeOnly === "1", p_low: low === "1",
   };
   const [session, { items, categories, total }, settings, documents, issued, counts] = await Promise.all([
@@ -50,7 +52,8 @@ const InventoryPage = async ({ searchParams }: {
     activeView === "issued" || activeView === "overview" ? getInventoryIssued() : [],
     activeView === "counts" || activeView === "overview" ? getLatestInventoryCounts() : new Map(),
   ]);
-  const selected = categories.find((row) => row.id === category);
+  const selected = categories.find((row) => row.id === categoryId);
+  const selectedReference = selected && recordSlug(selected.name, selected.id);
   const filtered = items.filter((item) => (!selected || selected.id === item.category_id)
     && (!match || `${item.item_code} ${item.name}`.toLowerCase().includes(match.toLowerCase()))
     && (!selectedCondition || item.condition === selectedCondition)
@@ -60,7 +63,7 @@ const InventoryPage = async ({ searchParams }: {
   const itemIds = new Set(filtered.map(({ id }) => id));
   const canWrite = hasPermission(session, "inventory.write");
   const query = new URLSearchParams();
-  if (selected) query.set("category", selected.id);
+  if (selectedReference) query.set("category", selectedReference);
   if (match) query.set("q", match);
   const categoryFilters = new URLSearchParams(query);
   if (selectedCondition) categoryFilters.set("condition", selectedCondition);
@@ -91,7 +94,7 @@ const InventoryPage = async ({ searchParams }: {
       })} />
       <form className="flex flex-wrap items-end gap-3" action="/inventory">
         <input type="hidden" name="view" value={activeView} />
-        {selected && <input type="hidden" name="category" value={selected.id} />}
+        {selectedReference && <input type="hidden" name="category" value={selectedReference} />}
         {["scope", "active", "low", "custody"].map((field) => {
           const value = categoryFilters.get(field);
           return value && <input key={field} type="hidden" name={field} value={value} />;
@@ -116,14 +119,14 @@ const InventoryPage = async ({ searchParams }: {
           <InventoryActivity returnTo={returnTo} documents={documents} />
         </>
       )}
-      {activeView === "items" && settings && <InventoryMasterlist returnTo={returnTo} items={items} category={selected?.id} query={match} canWrite={canWrite} settings={settings}
+      {activeView === "items" && settings && <InventoryMasterlist returnTo={returnTo} items={items} category={selectedReference} query={match} canWrite={canWrite} settings={settings}
         pagination={<TablePageLinks previous={page > 1 ? pageHref(Math.min(page - 1, Math.max(1, Math.ceil(total / tablePageSize)))) : undefined}
           next={page * tablePageSize < total ? pageHref(page + 1) : undefined}
           label={items.length ? `Rows ${(page - 1) * tablePageSize + 1}–${(page - 1) * tablePageSize + items.length} of ${total}` : `${total} matching items`} />} />}
       {activeView === "issued" && <InventoryIssuedSummary returnTo={returnTo} lines={issued.filter((line) => itemIds.has(line.item_id) && (scope === "all" || line.outstanding > 0)
         && (custody !== "1" || line.form_type !== "RIS"))}
-        items={filtered} category={selected?.id} canWrite={canWrite} all={scope === "all"} custody={custody === "1"} />}
-      {activeView === "counts" && <InventoryCounts returnTo={returnTo} items={active} latest={counts} canWrite={canWrite} category={selected?.id} />}
+        items={filtered} category={selectedReference} canWrite={canWrite} all={scope === "all"} custody={custody === "1"} />}
+      {activeView === "counts" && <InventoryCounts returnTo={returnTo} items={active} latest={counts} canWrite={canWrite} category={selectedReference} />}
       {activeView === "reports" && (
         <Card><CardHeader><CardTitle><h2>Printable property reports</h2></CardTitle></CardHeader>
           <CardContent>
