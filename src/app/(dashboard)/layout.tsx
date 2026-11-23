@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
-import { Archive, CalendarDays, ChartNoAxesCombined, ClipboardList, FileText, History, House, School, Settings2, Users } from "lucide-react";
+import { Archive, CalendarDays, CalendarOff, ChartNoAxesCombined, ClipboardList, FileText, History, House, School, Settings2, Users } from "lucide-react";
 import { DeskNavigation, type DeskNavGroup } from "@/components/desk-navigation";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +31,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     ] },
     ...(personnel ? [{ label: "Personnel", links: [
       { href: "/employees", label: "Employees", icon: <Users {...iconProps} /> },
+      { href: "/leaves", label: "Leave records", icon: <CalendarOff {...iconProps} /> },
       { href: "/nosi", label: "Step increments", icon: <ChartNoAxesCombined {...iconProps} /> },
     ] }] : []),
     { label: "Operations", links: [

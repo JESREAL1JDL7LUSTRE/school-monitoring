@@ -88,6 +88,17 @@ export type Concern = {
   updated_at: string;
   created_by: string | null;
 };
+export type EmployeeLeave = {
+  id: string;
+  employee_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  updated_at: string;
+};
+
+export type LeaveDetails = Pick<EmployeeLeave, "leave_type" | "start_date" | "end_date">;
+
 export type PersonnelTables = {
   employees: Table<Employee>;
   document_types: Table<DocumentType>;
@@ -97,6 +108,13 @@ export type PersonnelTables = {
   employee_salary_history: Table<SalaryRecord>;
   nosi_records: Table<NosiRecord>;
   concern_logs: Table<Concern>;
+  employee_leaves: Table<EmployeeLeave, LeaveDetails & Pick<EmployeeLeave, "employee_id">, LeaveDetails, [{
+    foreignKeyName: "employee_leaves_employee_id_fkey";
+    columns: ["employee_id"];
+    isOneToOne: false;
+    referencedRelation: "employees";
+    referencedColumns: ["id"];
+  }]>;
 };
 export type PersonnelFunctions = {
   personnel_home_counts: { Args: Record<never, never>; Returns: {
