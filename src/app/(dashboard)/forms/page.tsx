@@ -3,6 +3,7 @@ import { ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/modules/auth/session";
+import { employeeReference } from "@/modules/personnel/employee-route";
 import { getPersonnelDirectory } from "@/modules/personnel/queries";
 import { formatPersonnelDate, manilaDate } from "@/modules/personnel/rules";
 import { getTemplate, templates, type Template } from "@/modules/documents/catalog";
@@ -43,9 +44,9 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
     const directory = template.employee ? await getPersonnelDirectory() : [];
     const employees = directory.map((entry) => ({ id: entry.id, label: `${entry.full_name} · ${entry.employee_no}` }));
     const selectedId = recordId(params.employee);
-    const selected = directory.find(({ id }) => id === selectedId);
+    const selected = directory.find(({ id, slug }) => selectedId ? id === selectedId : slug && slug === params.employee);
     if (selected) {
-      const reference = recordSlug(selected.employee_no, selected.id);
+      const reference = employeeReference(selected);
       if (params.employee !== reference) redirect(withRouteQuery("/forms", { ...params, employee: reference }));
     }
 

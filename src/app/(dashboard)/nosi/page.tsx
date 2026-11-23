@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { recordSlug, withRouteQuery } from "@/lib/record-slug";
+import { withRouteQuery } from "@/lib/record-slug";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { saveNosi } from "@/modules/personnel/actions";
 import { nosiStatuses } from "@/modules/personnel/database";
+import { employeeReference } from "@/modules/personnel/employee-route";
 import { PersonnelForm } from "@/modules/personnel/form";
 import { getPersonnelOverview } from "@/modules/personnel/queries";
 import { formatPersonnelDate, formatSalary, matchesPersonnelFilter, personnelMetrics } from "@/modules/personnel/rules";
@@ -33,7 +34,7 @@ export default async function NosiPage() {
         <TableBody>
           {rows.map(({ employee, metric }) => (
             <TableRow key={employee.id}>
-              <TableCell><Link className="font-medium underline-offset-4 hover:underline" href={`/employees/${recordSlug(employee.employee_no, employee.id)}`}>{employee.full_name}</Link><span className="block text-xs text-muted-foreground">{employee.position}</span></TableCell>
+              <TableCell><Link className="font-medium underline-offset-4 hover:underline" href={`/employees/${employeeReference(employee)}`}>{employee.full_name}</Link><span className="block text-xs text-muted-foreground">{employee.position}</span></TableCell>
               <TableCell>{formatSalary(employee.current_salary?.monthly_salary ?? null)}{employee.current_salary && <span className="block text-xs">SG {employee.current_salary.grade} · Step {employee.current_salary.step}</span>}</TableCell>
               <TableCell>{formatPersonnelDate(employee.step_date)}</TableCell>
               <TableCell>{formatPersonnelDate(metric.eligibleOn)}<span className="block text-xs">{metric.stepStatus}</span></TableCell>
@@ -46,7 +47,7 @@ export default async function NosiPage() {
                   <Choices label={`NOSI status for ${employee.full_name}`} name="status" values={nosiStatuses} value={employee.nosi_status} />
                 </PersonnelForm> : <Status>{employee.nosi_status}</Status>}
               </TableCell>
-              <TableCell><Button variant="outline" asChild><Link href={withRouteQuery("/forms", { template: "nosi", employee: recordSlug(employee.employee_no, employee.id) })}>Print NOSI</Link></Button></TableCell>
+              <TableCell><Button variant="outline" asChild><Link href={withRouteQuery("/forms", { template: "nosi", employee: employeeReference(employee) })}>Print NOSI</Link></Button></TableCell>
             </TableRow>
           ))}
           {!rows.length && <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No step increments are due or in progress.</TableCell></TableRow>}

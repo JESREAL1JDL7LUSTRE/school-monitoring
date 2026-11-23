@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requirePermission } from "@/modules/auth/session";
-import { recordSlug } from "@/lib/record-slug";
 import { concernCategories, concernPriorities, concernStatuses, nosiStatuses } from "./database";
+import { employeeReference } from "./employee-route";
 import { getNosiCycle } from "./queries";
 import { employeeDateMetrics, manilaDate } from "./rules";
 import { grade, money, mutationFailure, optionalDate, personnelFailure, profileSchema, stalePersonnel, step, uuid, version, type PersonnelActionState } from "./validation";
@@ -45,7 +45,8 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
   const failure = mutationFailure(error, "This employee ID is already in use.");
   if (failure || !data) return failure ?? personnelFailure("The employee could not be created.");
   success("Employee added.", data);
-  redirect(`/employees/${recordSlug(profile.data.employee_no, data)}`);
+  const { data: employee } = await supabase.from("employees").select("slug").eq("id", data).maybeSingle();
+  redirect(`/employees/${employeeReference({ id: data, employee_no: profile.data.employee_no, slug: employee?.slug })}`);
 }
 
 export async function changeArchive(_: PersonnelActionState, form: FormData) {

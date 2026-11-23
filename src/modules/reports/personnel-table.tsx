@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { createColumnHelper, tableFeatures, useTable } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { recordSlug } from "@/lib/record-slug";
 
-type ReportRow = { id: string; employeeNo: string; values: string[] };
+type ReportRow = { id: string; reference: string; values: string[] };
 const features = tableFeatures({});
 const column = createColumnHelper<typeof features, ReportRow>();
 
@@ -15,7 +14,7 @@ export function PersonnelReportTable({ headings, rows }: { headings: string[]; r
     id: String(index),
     header: heading,
     cell: ({ getValue, row }) => index === 2
-      ? <Link href={`/employees/${recordSlug(row.original.employeeNo, row.original.id)}`} className="font-semibold underline underline-offset-2 print:no-underline">{getValue()}</Link>
+      ? <Link href={`/employees/${row.original.reference}`} className="font-semibold underline underline-offset-2 print:no-underline">{getValue()}</Link>
       : getValue(),
   }))), [headings]);
   const table = useTable({ features, columns, data: rows, getRowId: (row) => row.id });

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { recordSlug } from "@/lib/record-slug";
+import { employeeReference } from "@/modules/personnel/employee-route";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getPersonnelPage } from "@/modules/personnel/queries";
 import { formatPersonnelDate, personnelFilterLabel, personnelFilters, personnelMetrics, readPersonnelFilter, type PersonnelFilter } from "@/modules/personnel/rules";
@@ -65,7 +65,7 @@ async function EmployeeResults({ filter, query, page }: { filter: PersonnelFilte
                 const metric = personnelMetrics(employee, context);
                 return (
                   <TableRow key={employee.id}>
-                    <TableCell><Link className="font-semibold underline-offset-4 hover:underline" href={`/employees/${recordSlug(employee.employee_no, employee.id)}`}>{employee.full_name}</Link>
+                    <TableCell><Link className="font-semibold underline-offset-4 hover:underline" href={`/employees/${employeeReference(employee)}`}>{employee.full_name}</Link>
                       <span className="block text-xs text-muted-foreground">{employee.employee_no} · {employee.position}</span>
                       {employee.custody_quantity > 0 && <span className="block text-xs">{employee.custody_quantity} in property custody</span>}
                     </TableCell>

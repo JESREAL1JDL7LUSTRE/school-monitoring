@@ -6,11 +6,14 @@ test("profile edits require confirmation and old employee URLs open the same rec
   const database = await databaseAs("personnel");
   const { data: employee, error } = await database.from("employees").select("employee_no,position").eq("id", employeeId).single();
   if (error || !employee) throw new Error("The synthetic employee is missing.");
-  const path = `/employees/${recordSlug(employee.employee_no, employeeId)}`;
+  const path = "/employees/maya-rivera";
   const editedPosition = `${employee.position.slice(0, 128)} (dialog test)`;
   await loginAs(page, "personnel");
-  await page.goto(`/employees/${employeeId}?source=bookmark`);
-  await expect(page).toHaveURL((url) => url.pathname === path && url.searchParams.get("source") === "bookmark");
+  for (const reference of [employeeId, recordSlug(employee.employee_no, employeeId)]) {
+    await page.goto(`/employees/${reference}?source=bookmark`);
+    await expect(page).toHaveURL((url) => url.pathname === path && url.searchParams.get("source") === "bookmark");
+  }
+  await expect(page.getByRole("link", { name: "Print this 201" })).toHaveAttribute("href", "/forms?template=employee-201&employee=maya-rivera");
 
   const open = page.getByRole("button", { name: "Edit profile" });
   const editor = page.getByRole("dialog", { name: "Edit profile" });
@@ -60,6 +63,7 @@ test("personnel follows a dashboard filter, updates a checklist and downloads a 
   await page.getByRole("link", { name: /Overdue step increments Review eligibility/ }).click();
   await expect(page).toHaveURL(/employees\?filter=over/);
   await page.getByRole("link", { name: "Maya H. Rivera" }).click();
+  await expect(page).toHaveURL(/\/employees\/maya-rivera$/);
   const row = page.getByRole("listitem", { name: "Appointment Papers (CSC Form 33)" });
   const status = row.getByRole("combobox");
   const initialStatus = await status.inputValue();
@@ -133,9 +137,12 @@ test("personnel follows a dashboard filter, updates a checklist and downloads a 
 
 test("property account cannot read employee records or write checklist rows", async ({ page }) => {
   await loginAs(page, "property");
-  await page.goto("/employees/" + employeeId);
-  await expect(page.getByRole("heading", { name: "Maya H. Rivera" })).toHaveCount(0);
-  await expect(page.getByText("This page could not be found.")).toBeVisible();
+  for (const reference of ["maya-rivera", employeeId]) {
+    await page.goto(`/employees/${reference}`);
+    await expect(page).toHaveURL(new RegExp(`/employees/${reference}$`));
+    await expect(page.getByRole("heading", { name: "Maya H. Rivera" })).toHaveCount(0);
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
+  }
 
   const property = await databaseAs("property");
   const [personnel, objects, writes, directory] = await Promise.all([

@@ -26,6 +26,9 @@ test("proxy refreshes an expiring session and protects a signed-out browser", as
   await expect(page).toHaveURL(/\/login/);
   await page.goto("/employees");
   await expect(page).toHaveURL(/\/login/);
+  await page.goto("/employees/maya-rivera");
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Maya H. Rivera" })).toHaveCount(0);
 });
 
 test("a live role revocation removes file, list and write access from an existing session", async ({ page }) => {

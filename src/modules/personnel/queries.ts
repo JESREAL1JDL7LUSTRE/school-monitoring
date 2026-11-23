@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { notFound } from "next/navigation";
+import { recordId } from "@/lib/record-slug";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
 import type { DocumentType, Employee, EmployeeAttachment, EmployeeDocument, EmployeeLicense, NosiRecord, PersonnelFunctions, PersonnelListRow, SalaryRecord } from "./database";
@@ -79,10 +80,24 @@ export const getPersonnelHomeCounts = cache(async () => {
 
 export const getPersonnelDirectory = cache(async (activeOnly = true) => {
   const { supabase } = await requirePermission("personnel.read");
-  return allRows((start, end) => {
-    const query = supabase.from("employees").select("id,full_name,employee_no,archived_at").order("full_name").order("id");
-    return (activeOnly ? query.is("archived_at", null) : query).range(start, end);
+  const columns = "id,full_name,employee_no,archived_at";
+  return allRows<Pick<Employee, "id" | "full_name" | "employee_no" | "archived_at" | "slug">>(async (start, end) => {
+    const query = supabase.from("employees").select(`${columns},slug`).order("full_name").order("id");
+    const result = await (activeOnly ? query.is("archived_at", null) : query).range(start, end);
+    if (result.error?.code !== "42703") return result;
+    const legacy = supabase.from("employees").select(columns).order("full_name").order("id");
+    return (activeOnly ? legacy.is("archived_at", null) : legacy).range(start, end);
   });
+});
+
+export const getEmployeeByReference = cache(async (reference: string): Promise<Employee | null> => {
+  const id = recordId(reference);
+  if (!id && (reference.length > 110 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(reference))) return null;
+  const { supabase } = await requirePermission("personnel.read");
+  const { data, error } = await supabase.from("employees").select("*").eq(id ? "id" : "slug", id ?? reference).maybeSingle();
+  if (error?.code === "42703" && !id) return null;
+  if (error) throw new Error("Could not load the employee profile.");
+  return data;
 });
 
 const effectiveStepDate = (initial: string | null, reset: string | null, asOf: string) =>
@@ -110,13 +125,13 @@ function summarize(employee: Employee, context: PersonnelContext, documentTypes:
 
 type PersonnelRead = "profile" | "checklist" | "salary" | "nosi" | "employee";
 
-const personnelData = cache(async (employeeId: string, mode: PersonnelRead = "profile") => {
+const personnelData = cache(async (employeeId: string, mode: PersonnelRead, employee?: Employee) => {
   const { supabase } = await requirePermission("personnel.read");
   const checklist = mode === "profile" || mode === "checklist";
   const salary = mode === "profile" || mode === "salary" || mode === "nosi";
   const [context, employees, documentTypes, statuses, licenses, salaryHistory, nosiHistory] = await Promise.all([
     getPersonnelContext(),
-    allRows((start, end) => supabase.from("employees").select("*").eq("id", employeeId).range(start, end)),
+    employee ? [employee] : allRows((start, end) => supabase.from("employees").select("*").eq("id", employeeId).range(start, end)),
     checklist ? allRows((start, end) => supabase.from("document_types").select("*").eq("active", true).order("sort_order").order("id").range(start, end)) : [],
     checklist ? allRows((start, end) => {
       const query = supabase.from("employee_documents").select("*").order("id");
@@ -175,13 +190,11 @@ export async function getNosiCycle(id: string, expectedStep: string) {
   return { employee: { ...employee.data, step_date }, context, nosi: nosi.data };
 }
 
-export const getEmployeeProfile = cache(async (id: string) => {
-  if (!/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(id)) notFound();
-  const { context, employees, documentTypes, statuses, licenses, salaryHistory, nosiHistory } = await personnelData(id);
-  if (!employees[0]) notFound();
-  const employee = summarize(employees[0], context, documentTypes, statuses, licenses, salaryHistory, nosiHistory);
+export const getEmployeeProfile = cache(async (record: Employee) => {
+  const { id } = record;
   const session = await requirePermission("personnel.read");
-  const [attachments, custody] = await Promise.all([
+  const [{ context, documentTypes, statuses, licenses, salaryHistory, nosiHistory }, attachments, custody] = await Promise.all([
+    personnelData(id, "profile", record),
     hasPermission(session, "files.read")
       ? allRows<EmployeeAttachment>((start, end) => session.supabase.from("employee_attachments").select("*")
         .eq("employee_id", id).order("uploaded_at", { ascending: false }).order("id").range(start, end))
@@ -189,6 +202,7 @@ export const getEmployeeProfile = cache(async (id: string) => {
     allRows((start, end) => session.supabase.rpc("employee_custody_summary", { p_employee_id: id })
       .order("document_no").order("item_code").range(start, end)),
   ]);
+  const employee = summarize(record, context, documentTypes, statuses, licenses, salaryHistory, nosiHistory);
   const checklist = documentTypes.map((document) => ({
     ...document,
     entry: statuses.find((status) => status.document_type_id === document.id) ?? null,

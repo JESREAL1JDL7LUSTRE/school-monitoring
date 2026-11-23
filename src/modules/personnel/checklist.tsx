@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { recordSlug, withRouteQuery } from "@/lib/record-slug";
 import { saveChecklist, saveChecklistReview, uploadEmployeeAttachment } from "./document-actions";
 import { checklistStatuses } from "./database";
+import { employeeReference } from "./employee-route";
 import { PersonnelForm } from "./form";
 import type { getEmployeeProfile } from "./queries";
 import { formatPersonnelDate } from "./rules";
@@ -19,7 +20,7 @@ export function Checklist({ profile, canEdit, canUpload }: { profile: Awaited<Re
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><CardTitle>201 file checklist</CardTitle><CardDescription>{employee.checklist_done} of {employee.checklist_total} complete. N/A counts as reviewed.</CardDescription></div>
-          <Button variant="outline" asChild><Link href={withRouteQuery("/forms", { template: "employee-201", employee: recordSlug(employee.employee_no, employee.id) })}>Print this 201</Link></Button>
+          <Button variant="outline" asChild><Link href={withRouteQuery("/forms", { template: "employee-201", employee: employeeReference(employee) })}>Print this 201</Link></Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-5">

@@ -4,6 +4,7 @@ import { employeeId, loginAs } from "./fixtures";
 test("personnel saves a Certificate of Employment snapshot and prints it without navigation", async ({ page, browser }) => {
   await loginAs(page, "personnel");
   await page.goto("/forms?template=certificate-of-employment&employee=" + employeeId);
+  await expect(page).toHaveURL(/\/forms\?template=certificate-of-employment&employee=maya-rivera$/);
   const purpose = "Synthetic appointment verification";
   await page.getByLabel("Purpose", { exact: true }).fill(purpose);
   await page.getByRole("button", { name: "Save draft" }).click();
