@@ -1,11 +1,11 @@
 "use client";
 
-import { type ComponentProps, useRef, useState, useTransition } from "react";
+import { type ComponentProps, useOptimistic, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { CalendarAgenda, dateFromISO, fullDate } from "@/modules/calendar/agenda";
+import { CalendarAgenda, dateFromISO, fullDate, type AgendaEntry } from "@/modules/calendar/agenda";
 import { firstCalendarYear, lastCalendarYear, monthKey as toMonthKey, resolveCalendarDate } from "@/modules/calendar/dates";
 import { CalendarEventForm } from "@/modules/calendar/event-form";
 import type { CalendarEntry } from "@/modules/calendar/queries";
@@ -53,6 +53,9 @@ export function MonthCalendar({ today, monthKey, events, canAdd }: {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedDate = resolveCalendarDate(searchParams.get("day") ?? undefined, monthKey);
+  const [visibleEvents, showPendingEvent] = useOptimistic<AgendaEntry[], CalendarEntry>(events, (entries, entry) => [
+    ...entries, { ...entry, pending: true },
+  ].sort((a, b) => a.event_date.localeCompare(b.event_date) || (a.start_time ?? "").localeCompare(b.start_time ?? "")));
   const [pending, navigate] = useTransition();
   const [formDate, setFormDate] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -65,7 +68,7 @@ export function MonthCalendar({ today, monthKey, events, canAdd }: {
   const weekCount = Math.ceil((offset + days) / 7);
   const monthLabel = periodFormat.format(period);
   const eventsByDate = new Map<string, CalendarEntry[]>();
-  for (const entry of events) {
+  for (const entry of visibleEvents) {
     const entries = eventsByDate.get(entry.event_date);
     if (entries) entries.push(entry);
     else eventsByDate.set(entry.event_date, [entry]);
@@ -108,7 +111,10 @@ export function MonthCalendar({ today, monthKey, events, canAdd }: {
         </Button>
         <p role="status" className="text-sm text-muted-foreground">{saved ? "Event saved." : ""}</p>
       </div>}
-      {formDate && <CalendarEventForm date={formDate} onCancel={closeForm} onSave={saveEvent} />}
+      {formDate && <CalendarEventForm date={formDate} onCancel={closeForm} onSave={saveEvent} onPending={(entry) => {
+        if (entry.event_date.startsWith(`${monthKey}-`)) showPendingEvent(entry);
+      }} />}
+    {pending && <span role="status" className="sr-only">Loading calendar month…</span>}
     <Card aria-busy={pending}>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -153,7 +159,7 @@ export function MonthCalendar({ today, monthKey, events, canAdd }: {
         </table>
       </CardContent>
     </Card>
-      <CalendarAgenda entries={events} selectedDate={selectedDate} monthLabel={monthLabel} showMonth={() => showDate(monthKey)} />
+      <CalendarAgenda entries={visibleEvents} selectedDate={selectedDate} monthLabel={monthLabel} showMonth={() => showDate(monthKey)} />
     </div>
   );
 }

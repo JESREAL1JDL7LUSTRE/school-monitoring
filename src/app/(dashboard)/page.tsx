@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowRight, CalendarDays, ClipboardCheck, Clock3, FileWarning, GraduationCap, Hourglass, IdCard, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DashboardLoading } from "@/components/dashboard-loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { hasPermission, requireSession } from "@/modules/auth/session";
-import { getPersonnelOverview } from "@/modules/personnel/queries";
-import { filterPersonnel, personnelFilterLabel } from "@/modules/personnel/rules";
+import { getPersonnelHomeCounts } from "@/modules/personnel/queries";
+import { personnelFilterLabel, type PersonnelFilter } from "@/modules/personnel/rules";
 
 const queue = [
   { key: "over", title: "Overdue step increments", hint: "Review eligibility and NOSI progress.", icon: Clock3, color: "warning" },
@@ -26,15 +29,15 @@ const groups = [
   { title: "PRC licenses", filters: ["exp", "c1", "c2"] },
 ] as const;
 
-type Overview = Awaited<ReturnType<typeof getPersonnelOverview>>;
-type Filter = Parameters<typeof filterPersonnel>[1];
-const hrefFor = (filter: Filter) => `/employees?filter=${encodeURIComponent(filter)}`;
+type HomeCounts = ReturnType<typeof getPersonnelHomeCounts>;
+type Overview = Awaited<HomeCounts>;
+const hrefFor = (filter: PersonnelFilter) => `/employees?filter=${encodeURIComponent(filter)}`;
 const overviewDate = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila", weekday: "long", month: "long", day: "numeric", year: "numeric",
 });
 
-function AttentionQueue({ staff, context }: Overview) {
-  const rows = queue.map((entry) => ({ ...entry, count: filterPersonnel(staff, entry.key, context).length })).filter(({ count }) => count > 0);
+function AttentionQueue({ facets }: Overview) {
+  const rows = queue.map((entry) => ({ ...entry, count: facets[entry.key] ?? 0 })).filter(({ count }) => count > 0);
 
   return (
     <Card className="gap-0 overflow-hidden py-0">
@@ -56,7 +59,7 @@ function AttentionQueue({ staff, context }: Overview) {
   );
 }
 
-function RecordCounts({ staff, context }: Overview) {
+function RecordCounts({ facets, context }: Overview) {
   return (
     <section aria-labelledby="record-counts" className="space-y-3">
       <h2 id="record-counts" className="text-lg font-semibold tracking-tight">Records at a glance</h2>
@@ -67,7 +70,7 @@ function RecordCounts({ staff, context }: Overview) {
             <CardContent className="divide-y" >
               {filters.map((filter) => (
                 <Link key={filter} href={hrefFor(filter)} className="desk-count-row flex min-h-11 items-center justify-between gap-3 text-sm">
-                  <span>{personnelFilterLabel(filter, context)}</span><strong className="tabular-nums">{filterPersonnel(staff, filter, context).length}</strong>
+                  <span>{personnelFilterLabel(filter, context)}</span><strong className="tabular-nums">{facets[filter] ?? 0}</strong>
                 </Link>
               ))}
             </CardContent>
@@ -78,29 +81,42 @@ function RecordCounts({ staff, context }: Overview) {
   );
 }
 
+async function ReferenceDate({ counts }: { counts: HomeCounts | null }) {
+  const overview = await counts;
+  const date = overview ? new Date(`${overview.context.asOf}T12:00:00+08:00`) : new Date();
+  return <>{overviewDate.format(date)}</>;
+}
+
+async function HomeRecords({ counts }: { counts: HomeCounts }) {
+  const overview = await counts;
+  return <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    <AttentionQueue {...overview} />
+    <RecordCounts {...overview} />
+  </div>;
+}
+
 export default async function DashboardPage() {
   const session = await requireSession();
-  const overview = hasPermission(session, "personnel.read") ? await getPersonnelOverview() : null;
+  const counts = hasPermission(session, "personnel.read") ? getPersonnelHomeCounts() : null;
   const inventory = hasPermission(session, "inventory.read");
-  const date = overview ? new Date(`${overview.context.asOf}T12:00:00+08:00`) : new Date();
 
   return (
     <div className="space-y-6">
       <header className="desk-date-strip flex flex-wrap items-end justify-between gap-4 rounded-xl border p-5 sm:p-6">
         <div className="space-y-2">
-          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><CalendarDays size={16} aria-hidden />{overviewDate.format(date)}</p>
+          <div className="flex min-h-5 items-center gap-2 text-sm font-medium text-muted-foreground">
+            <CalendarDays size={16} aria-hidden />
+            <Suspense fallback={<Skeleton aria-hidden="true" className="h-4 w-44" />}><ReferenceDate counts={counts} /></Suspense>
+          </div>
           <h1 className="desk-heading">Home</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          {overview && <Button asChild><Link href="/employees"><Users aria-hidden />Employee records</Link></Button>}
+          {counts && <Button asChild><Link href="/employees"><Users aria-hidden />Employee records</Link></Button>}
           {inventory && <Button variant="outline" asChild><Link href="/inventory"><Package aria-hidden />Inventory</Link></Button>}
         </div>
       </header>
-      {overview ? (
-        <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-          <AttentionQueue {...overview} />
-          <RecordCounts {...overview} />
-        </div>
+      {counts ? (
+        <Suspense fallback={<DashboardLoading kind="home" />}><HomeRecords counts={counts} /></Suspense>
       ) : inventory && (
         <Card><CardHeader><CardTitle>Property and inventory</CardTitle></CardHeader><CardContent><Button asChild><Link href="/inventory">Open inventory overview<ArrowRight aria-hidden /></Link></Button></CardContent></Card>
       )}

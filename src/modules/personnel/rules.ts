@@ -39,7 +39,7 @@ export function readPersonnelFilter(raw?: string): PersonnelFilter {
   return raw && Object.hasOwn(personnelFilters, raw) ? raw as PersonnelFilter : "all";
 }
 
-export function personnelFilterLabel(filter: PersonnelFilter, context: PersonnelContext) {
+export function personnelFilterLabel(filter: PersonnelFilter, context: Pick<PersonnelContext, "reportingYear">) {
   if (filter === "l0") return `Loyalty ${context.reportingYear}`;
   if (filter === "l1") return `Loyalty ${context.reportingYear + 1}`;
   return personnelFilters[filter];

@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requirePermission } from "@/modules/auth/session";
 import { roleLabels, type Role } from "@/modules/auth/permissions";
 import { z } from "zod";
 import { settingsSchemas, type SettingsSection } from "./fields";
+import { schoolIdentityTag } from "./queries";
 import type { Json } from "@/types/database";
 
 const logoFormats = {
@@ -80,6 +81,7 @@ export const saveSchoolSettings = async (section: SettingsSection, _previous: Se
   if (error) return fail("Could not save the school settings. Check the values and try again.");
   if (!data) return fail("Another staff member changed these settings. Reload before saving.");
 
+  if (section === "identity") updateTag(schoolIdentityTag);
   revalidatePath("/", "layout");
   return { message: "School settings saved." };
 };

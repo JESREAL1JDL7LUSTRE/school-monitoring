@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useRef } from "react";
 import type { ReactNode } from "react";
+import { NavigationPending } from "@/components/navigation-pending";
 
 export type DeskNavGroup = { label?: string; links: { label: string; href: string; icon: ReactNode }[] };
 
@@ -21,7 +22,7 @@ function Navigation({ groups, onNavigate }: { groups: DeskNavGroup[]; onNavigate
               return (
                 <li key={href}>
                   <Link href={href} aria-current={active ? "page" : undefined} onClick={onNavigate} className="desk-nav-link flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium">
-                    {icon}<span>{label}</span>
+                    {icon}<span>{label}</span><NavigationPending className="ml-auto" />
                   </Link>
                 </li>
               );

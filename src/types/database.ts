@@ -57,7 +57,9 @@ export type Database = {
       school_settings: Table<SchoolSettings, never, never>;
       staff_roles: Table<{ user_id: string; role: Role; created_at: string }, never, never>;
     } & PersonnelTables & InventoryTables & DocumentsTables & CalendarTables;
-    Views: InventoryViews;
+    Views: InventoryViews & {
+      school_identity: { Row: Pick<SchoolSettings, "school_name" | "region" | "division">; Relationships: [] };
+    };
     Functions: {
       get_staff_access: { Args: Record<never, never>; Returns: { roles: Role[]; permissions: Permission[] } };
       audit_log_page: {

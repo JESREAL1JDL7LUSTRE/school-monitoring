@@ -3,9 +3,10 @@ import Link from "next/link";
 import { Archive, CalendarDays, ChartNoAxesCombined, ClipboardList, FileText, History, House, School, Settings2, Users } from "lucide-react";
 import { DeskNavigation, type DeskNavGroup } from "@/components/desk-navigation";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "@/modules/auth/actions";
 import { hasPermission, requireSession } from "@/modules/auth/session";
-import { getSchoolSettings } from "@/modules/settings/queries";
+import { getSchoolIdentity } from "@/modules/settings/queries";
 
 const iconProps = { size: 18, "aria-hidden": true } as const;
 
@@ -61,7 +62,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </div>
         <header aria-label="School identity" className="desk-chrome sticky top-0 z-20 border-b border-border bg-card">
           <div className="mx-auto flex min-h-14 max-w-[88rem] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2 text-sm sm:px-6 lg:px-8">
-            <Suspense fallback={<span aria-hidden="true" className="h-4 w-40 rounded bg-muted" />}>
+            <Suspense fallback={<Skeleton aria-hidden="true" className="h-4 w-40" />}>
               <SchoolIdentity />
             </Suspense>
           </div>
@@ -73,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 }
 
 async function SchoolIdentity() {
-  const settings = await getSchoolSettings();
+  const settings = await getSchoolIdentity();
   return <>
     <p className="font-semibold text-foreground">{settings.school_name}</p>
     <p className="text-muted-foreground">{[settings.region, settings.division].filter(Boolean).join(" · ")}</p>

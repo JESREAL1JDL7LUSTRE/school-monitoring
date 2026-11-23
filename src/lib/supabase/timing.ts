@@ -4,9 +4,10 @@ const databaseOperations = new Set([
   "employee_documents", "employee_licenses", "employee_salary_history", "employees",
   "generated_documents", "document_templates", "inventory_balances", "inventory_categories",
   "inventory_documents", "inventory_issued_lines", "inventory_items", "inventory_item_stock", "inventory_latest_counts",
-  "inventory_stock_card", "nosi_records", "physical_counts", "school_settings",
+  "inventory_stock_card", "nosi_records", "physical_counts", "school_settings", "school_identity",
   "get_staff_access", "audit_log_page", "inventory_employee_directory", "recent_inventory_activity",
-  "inventory_item_list", "inventory_counts_as_of", "inventory_stock_card_page", "personnel_list_rows", "personnel_list_page", "employee_custody_summary",
+  "inventory_item_list", "inventory_counts_as_of", "inventory_stock_card_page", "personnel_list_rows", "personnel_list_page",
+  "personnel_home_counts", "personnel_workspace_page", "employee_custody_summary",
 ]);
 
 const operation = (url: URL) => {

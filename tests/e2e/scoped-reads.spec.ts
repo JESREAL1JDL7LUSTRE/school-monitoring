@@ -37,6 +37,18 @@ test("employee filter membership and totals agree with the existing personnel ru
   expect(page?.total).toBe(expectedCounts.all);
   for (const key of keys) expect(page?.facets[key] ?? 0).toBe(expectedCounts[key]);
 
+  const home = await admin.rpc("personnel_home_counts").single();
+  expect(home.error).toBeNull();
+  expect(home.data?.as_of).toBe(context.asOf);
+  expect(home.data?.reporting_year).toBe(context.reportingYear);
+  expect(home.data?.facets).toEqual(page?.facets);
+  const workspace = await admin.rpc("personnel_workspace_page", {
+    p_filter: "all", p_q: "", p_offset: 0, p_limit: 25,
+  }).single();
+  expect(workspace.error).toBeNull();
+  expect(workspace.data?.context).toEqual(context);
+  expect(workspace.data?.result).toEqual(page);
+
   const property = await databaseAs("property");
   const restricted = await property.rpc("personnel_list_page", {
     ...args, p_filter: "all", p_q: "", p_offset: 0, p_limit: 25,
@@ -44,6 +56,15 @@ test("employee filter membership and totals agree with the existing personnel ru
   expect(restricted.data?.total).toBe(0);
   const audit = await property.rpc("audit_log_page", {});
   expect(audit.data).toEqual([]);
+  const propertyHome = await property.rpc("personnel_home_counts");
+  expect(propertyHome.data).toEqual([]);
+  const propertyPage = await property.rpc("personnel_workspace_page", {
+    p_filter: "all", p_q: "", p_offset: 0, p_limit: 25,
+  });
+  expect(propertyPage.data).toEqual([]);
+  const propertyIdentity = await property.from("school_identity").select("*").single();
+  expect(propertyIdentity.error).toBeNull();
+  expect(Object.keys(propertyIdentity.data ?? {}).sort()).toEqual(["division", "region", "school_name"]);
 });
 
 test("export authenticates first and returns a header-only template", async ({ page, request }) => {

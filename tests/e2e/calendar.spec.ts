@@ -44,6 +44,32 @@ test("same-month day selection uses browser history without a Calendar request",
   expect(requests).toHaveLength(0);
 });
 
+test("Calendar shows a pending event before confirmation and removes it when the save fails", async ({ page }) => {
+  await loginAs(page, "personnel");
+  await page.goto("/calendar?month=2041-06&day=2041-06-14");
+  const agenda = page.locator("#calendar-events");
+  const rejected = `Synthetic pending event ${crypto.randomUUID()}`;
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/calendar?**", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await held;
+    return route.abort("failed");
+  });
+  try {
+    await page.getByRole("button", { name: "Add event" }).click();
+    await page.getByLabel("Event title").fill(rejected);
+    await page.getByRole("button", { name: "Save event" }).click();
+    const pending = agenda.getByRole("listitem").filter({ hasText: rejected });
+    await expect(pending.getByText("Saving…")).toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(page.locator("#calendar-event-form").getByRole("alert")).toContainText("Could not confirm the event.");
+  await expect(agenda.getByText(rejected)).toHaveCount(0);
+  await expect(page.getByLabel("Event title")).toHaveValue(rejected);
+});
+
 test("staff save school calendar events and auditors can read them", async ({ page, browser }) => {
   await loginAs(page, "personnel");
   await page.goto("/calendar?month=2041-03&day=2041-03-14");
@@ -56,10 +82,11 @@ test("staff save school calendar events and auditors can read them", async ({ pa
   await page.getByLabel("Start time (optional)").fill("09:15");
   await page.getByLabel("Notes (optional)").fill(notes);
   await page.getByRole("button", { name: "Save event" }).click();
-  await expect(page.getByRole("status")).toHaveText("Event saved.");
+  await expect(page.getByRole("status").filter({ hasText: "Event saved." })).toBeVisible();
 
   const agenda = page.locator("#calendar-events");
   await expect(agenda.getByText(title, { exact: true })).toBeVisible();
+  await expect(agenda.getByText(title, { exact: true })).toHaveCount(1);
   await expect(agenda.getByText(notes, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /March 14, 2041, \d+ events?/ })).toBeVisible();
   await page.reload();

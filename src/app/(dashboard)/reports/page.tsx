@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { DashboardLoading } from "@/components/dashboard-loading";
 import { notFound } from "next/navigation";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
@@ -72,7 +74,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         label: title,
         active: report === key,
       }))} /></Card>}
-    {report && <PersonnelReport keyName={report} showAll={params.show === "all"} />}
+    {report && <Suspense key={`${report}:${params.show === "all"}`} fallback={<DashboardLoading />}>
+      <PersonnelReport keyName={report} showAll={params.show === "all"} />
+    </Suspense>}
     {inventory && <PropertyReports open={!report} />}
   </div>;
 }

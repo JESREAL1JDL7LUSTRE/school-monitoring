@@ -46,3 +46,28 @@ The local browser benchmark runs with `node scripts/benchmark-local.mjs http://1
 ## Hosted comparison
 
 Vercel rejected the stored credential. The Seoul preview canary, hosted traces, and the isolated hosted `getClaims()` comparison remain pending. Region configuration still needs to be tested against matched preview data before production rollout. [Vercel function region configuration](https://vercel.com/docs/functions/configuring-functions/region)
+
+## Streaming and cache follow-up
+
+The App Router renders the authenticated dashboard on the server. Route-level loading files let Next.js prefetch a fallback for navigation. Home, Employees, Calendar, and Reports also stream their data sections independently so their page heading can appear first. The placeholders follow the dimensions of the cards, table rows, and Calendar cells they replace, with reduced-motion support. Navigation links show pending feedback while a transition is still loading. [Next.js loading UI](https://nextjs.org/docs/app/api-reference/file-conventions/loading) · [Next.js navigation](https://nextjs.org/docs/app/getting-started/linking-and-navigating) · [web.dev on reserving space](https://web.dev/articles/optimize-cls)
+
+Home reads counts and the reporting date in one PostgreSQL call. Employees reads its results, facets, and calculation settings in one call. The `personnel_reference_context` view gives these queries the same reference date and rules, and their counts reuse the employee masterlist’s membership rules. The `school_identity` view projects the three fields the dashboard header needs. Both views set `security_invoker` so existing Supabase policies apply. The app can use the previous schema during a rolling deployment. [Supabase view security](https://supabase.com/docs/guides/database/views#view-security)
+
+The shared Next.js Data Cache stores the school name, region, and division for up to five minutes before refresh. The app checks current staff access before every cache lookup and expires the entry after a successful identity edit so the next read sees the save. Personnel records, signed URLs, Auth responses, and operational counts are read under the current request. [Next.js Data Cache](https://nextjs.org/docs/app/api-reference/functions/unstable_cache) · [Next.js immediate cache invalidation](https://nextjs.org/docs/app/api-reference/functions/updateTag) · [Supabase SSR cache and Auth guidance](https://supabase.com/docs/guides/auth/server-side/advanced-guide)
+
+Calendar shows a temporary entry marked “Saving…” during submission. The confirmed month data takes over when the action succeeds. On failure the temporary row disappears and the input stays available. Official records such as stock postings and draft documents continue to show pending feedback through server confirmation. [React optimistic actions](https://react.dev/reference/react/useOptimistic)
+
+### Matched local measurements
+
+The final comparison alternated commit `ee45248` and the updated production build against the same seeded database. Each route had 10 direct loads per build after one warm-up. The two builds used separate Chrome sessions on the same desktop.
+
+| Route | Visible heading median, before ? after | Usable content median, before ? after | Usable content p95, before ? after |
+| --- | ---: | ---: | ---: |
+| Home | 592 ? 386 ms | 614 ? 533 ms | 695 ? 734 ms |
+| Employees | 630 ? 345 ms | 647 ? 582 ms | 1,379 ? 1,068 ms |
+| Inventory overview | 685 ? 406 ms | 725 ? 585 ms | 1,456 ? 771 ms |
+| Calendar | 455 ? 528 ms | 491 ? 550 ms | 1,130 ? 1,567 ms |
+
+The browser checks verified that the Employees skeleton arrived before the server-rendered table, a saved school identity refreshed for another authorized account, and an optimistic Calendar event disappeared on failure while its form input remained. All 19 browser tests and 10 unit tests passed. The local SQL checks reused 2,000 synthetic employees and 20,013 ledger lines and rolled back their fixture changes.
+
+The live sign-in response still showed Singapore ingress and Washington, D.C. function execution. The repository now sets `icn1` so the next Vercel build can run alongside the Seoul database. Apply migrations `20261122000500` and `20261122000600` to the hosted project before enabling the new build, then compare hosted final headers and usable content. [Vercel function region configuration](https://vercel.com/docs/functions/configuring-functions/region) · [Supabase migration deployment](https://supabase.com/docs/guides/deployment/database-migrations)

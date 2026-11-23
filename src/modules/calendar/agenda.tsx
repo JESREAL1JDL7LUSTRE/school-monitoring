@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CalendarEntry } from "./queries";
 
+export type AgendaEntry = CalendarEntry & { pending?: boolean };
+
 export const fullDate = new Intl.DateTimeFormat("en-PH", {
   dateStyle: "long", timeZone: "UTC",
 });
@@ -13,7 +15,7 @@ const eventTime = new Intl.DateTimeFormat("en-PH", {
 export const dateFromISO = (date: string) => new Date(`${date}T00:00:00Z`);
 
 export function CalendarAgenda({ entries, selectedDate, monthLabel, showMonth }: {
-  entries: CalendarEntry[];
+  entries: AgendaEntry[];
   selectedDate: string | null;
   monthLabel: string;
   showMonth: () => void;
@@ -32,7 +34,10 @@ export function CalendarAgenda({ entries, selectedDate, monthLabel, showMonth }:
           <ul className="divide-y">
             {agenda.map((entry) => (
               <li key={entry.id} className="space-y-1 py-3 first:pt-0 last:pb-0">
-                <p className="font-medium wrap-anywhere">{entry.title}</p>
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <p className="font-medium wrap-anywhere">{entry.title}</p>
+                  {entry.pending && <span className="text-xs font-medium text-muted-foreground" role="status">Saving…</span>}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   <time dateTime={entry.event_date}>{fullDate.format(dateFromISO(entry.event_date))}</time>
                   {" · "}

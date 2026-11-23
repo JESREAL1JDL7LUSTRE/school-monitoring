@@ -68,6 +68,9 @@ begin
   if jsonb_array_length(payload->'rows') <> 25 or (payload->>'total')::int <> 2000 then
     raise exception 'The employee page and total diverged';
   end if;
+  if (select (facets->>'all')::int from public.personnel_home_counts()) is distinct from cardinality(directory_ids) then
+    raise exception 'Home active-employee counts diverged from the directory';
+  end if;
   if (select count(*) from (select id from public.inventory_item_list() order by name, id limit 25) items) <> 25 then
     raise exception 'Expected a full 25-item inventory page';
   end if;

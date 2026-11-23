@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { DashboardLoading } from "@/components/dashboard-loading";
 import { TablePageLinks, tablePage, tablePageSize } from "@/components/table-page-links";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +13,21 @@ import { formatPersonnelDate, personnelFilterLabel, personnelFilters, personnelM
 import { Field, PersonnelHeading, Status } from "@/modules/personnel/ui";
 
 export default async function EmployeesPage({ searchParams }: PageProps<"/employees">) {
-  const search = await searchParams;
+  const [session, search] = await Promise.all([requirePermission("personnel.read"), searchParams]);
   const filter = readPersonnelFilter(typeof search.filter === "string" ? search.filter : undefined);
   const query = typeof search.q === "string" ? search.q.trim().slice(0, 160) : "";
   const page = tablePage(search.page);
-  const [session, { employees, context, total, facets }] = await Promise.all([
-    requirePermission("personnel.read"), getPersonnelPage(filter, query, page, tablePageSize),
-  ]);
+  return <div className="space-y-5">
+    <PersonnelHeading title="Employees" actions={hasPermission(session, "personnel.write") &&
+      <Button asChild><Link href="/employees/new">Add employee</Link></Button>} />
+    <Suspense key={JSON.stringify([filter, query, page])} fallback={<DashboardLoading filters />}>
+      <EmployeeResults filter={filter} query={query} page={page} />
+    </Suspense>
+  </div>;
+}
+
+async function EmployeeResults({ filter, query, page }: { filter: PersonnelFilter; query: string; page: number }) {
+  const { employees, context, total, facets } = await getPersonnelPage(filter, query, page, tablePageSize);
   const pageHref = (number: number) => {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -26,9 +36,7 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
     return params.size ? `/employees?${params}` : "/employees";
   };
   return (
-    <div className="space-y-5">
-      <PersonnelHeading title="Employees" actions={hasPermission(session, "personnel.write") &&
-        <Button asChild><Link href="/employees/new">Add employee</Link></Button>} />
+    <>
       <Card className="py-4 sm:py-5">
         <CardContent className="px-4 sm:px-5">
           <form className="grid items-end gap-x-4 gap-y-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
@@ -77,6 +85,6 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
             label={employees.length ? `Rows ${(page - 1) * tablePageSize + 1}–${(page - 1) * tablePageSize + employees.length} of ${total}` : `Page ${page}`} />
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

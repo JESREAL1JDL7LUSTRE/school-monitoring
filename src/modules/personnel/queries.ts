@@ -4,7 +4,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getSchoolSettings } from "@/modules/settings/queries";
-import type { DocumentType, Employee, EmployeeAttachment, EmployeeDocument, EmployeeLicense, NosiRecord, PersonnelListRow, SalaryRecord } from "./database";
+import type { DocumentType, Employee, EmployeeAttachment, EmployeeDocument, EmployeeLicense, NosiRecord, PersonnelFunctions, PersonnelListRow, SalaryRecord } from "./database";
 import { manilaDate, type PersonnelContext, type PersonnelFilter, type PersonnelSummary } from "./rules";
 
 type Rows<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
@@ -46,14 +46,36 @@ const contextArgs = (context: PersonnelContext) => ({
 const toPersonnelSummary = ({ employee, ...record }: PersonnelListRow): PersonnelSummary =>
   ({ ...employee, ...record });
 
-export async function getPersonnelPage(filter: PersonnelFilter, query: string, page: number, pageSize: number) {
-  const [{ supabase }, context] = await Promise.all([requirePermission("personnel.read"), getPersonnelContext()]);
-  const { data, error } = await supabase.rpc("personnel_list_page", {
-    ...contextArgs(context), p_q: query, p_filter: filter, p_offset: (page - 1) * pageSize, p_limit: pageSize,
-  });
+async function loadLegacyPersonnelPage(
+  supabase: Awaited<ReturnType<typeof requirePermission>>["supabase"],
+  args: PersonnelFunctions["personnel_workspace_page"]["Args"],
+) {
+  const context = await getPersonnelContext();
+  const { data, error } = await supabase.rpc("personnel_list_page", { ...contextArgs(context), ...args });
   if (error || !data) throw new Error("Could not load the employee masterlist.");
-  return { context, employees: data.rows.map(toPersonnelSummary), total: data.total, facets: data.facets };
+  return { context, result: data };
 }
+
+export async function getPersonnelPage(filter: PersonnelFilter, query: string, page: number, pageSize: number) {
+  const { supabase } = await requirePermission("personnel.read");
+  const args = { p_q: query, p_filter: filter, p_offset: (page - 1) * pageSize, p_limit: pageSize };
+  const { data, error } = await supabase.rpc("personnel_workspace_page", args).single();
+  const payload = error?.code === "PGRST202" ? await loadLegacyPersonnelPage(supabase, args) : data;
+  if (!payload) throw new Error("Could not load the employee masterlist.");
+  const { context, result } = payload;
+  return { context, employees: result.rows.map(toPersonnelSummary), total: result.total, facets: result.facets };
+}
+
+export const getPersonnelHomeCounts = cache(async () => {
+  const { supabase } = await requirePermission("personnel.read");
+  const { data, error } = await supabase.rpc("personnel_home_counts").single();
+  if (error?.code === "PGRST202") {
+    const { context, result } = await loadLegacyPersonnelPage(supabase, { p_q: "", p_filter: "all", p_offset: 0, p_limit: 1 });
+    return { context, facets: result.facets };
+  }
+  if (error || !data) throw new Error("Could not load personnel counts.");
+  return { context: { asOf: data.as_of, reportingYear: data.reporting_year }, facets: data.facets };
+});
 
 export const getPersonnelDirectory = cache(async (activeOnly = true) => {
   const { supabase } = await requirePermission("personnel.read");

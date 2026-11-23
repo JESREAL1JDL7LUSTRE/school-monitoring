@@ -7,16 +7,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addCalendarEvent } from "./actions";
+import { parseCalendarEvent } from "./event-input";
+import type { CalendarEntry } from "./queries";
 
-export function CalendarEventForm({ date, onCancel, onSave }: {
+export function CalendarEventForm({ date, onCancel, onSave, onPending }: {
   date: string;
   onCancel: () => void;
   onSave: (date: string) => void;
+  onPending: (entry: CalendarEntry) => void;
 }) {
   const [state, submit, pending] = useActionState(async (_previous: Awaited<ReturnType<typeof addCalendarEvent>>, form: FormData) => {
-    const result = await addCalendarEvent({}, form);
-    if (result.savedDate) onSave(result.savedDate);
-    return result;
+    const parsed = parseCalendarEvent(form);
+    if (parsed.success) onPending({ id: crypto.randomUUID(), ...parsed.data });
+    try {
+      const result = await addCalendarEvent({}, form);
+      if (result.savedDate) onSave(result.savedDate);
+      return result;
+    } catch {
+      return { error: "Could not confirm the event. Check the calendar before trying again." };
+    }
   }, {});
   const [values, setValues] = useState({ title: "", date, time: "", notes: "" });
 

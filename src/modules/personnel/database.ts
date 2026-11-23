@@ -1,5 +1,5 @@
 import type { Json, Table } from "@/types/database";
-import type { PersonnelFilter } from "./rules";
+import type { PersonnelContext, PersonnelFilter } from "./rules";
 
 export const employmentStatuses = ["Permanent", "Substitute", "Job Order", "COS"] as const;
 export const classifications = ["Teaching", "Teaching Related", "NTP"] as const;
@@ -98,8 +98,15 @@ export type PersonnelTables = {
   concern_logs: Table<Concern>;
 };
 export type PersonnelFunctions = {
+  personnel_home_counts: { Args: Record<never, never>; Returns: {
+    as_of: string; reporting_year: number; facets: Partial<Record<PersonnelFilter, number>>;
+  }[] };
   personnel_list_rows: { Args: PersonnelListContext; Returns: PersonnelListRow[] };
   personnel_list_page: { Args: PersonnelListContext & { p_q: string; p_filter: PersonnelFilter; p_offset: number; p_limit: number }; Returns: PersonnelListPage };
+  personnel_workspace_page: {
+    Args: { p_q: string; p_filter: PersonnelFilter; p_offset: number; p_limit: number };
+    Returns: { context: PersonnelContext; result: PersonnelListPage }[];
+  };
   inventory_employee_directory: { Args: Record<PropertyKey, never>; Returns: Pick<Employee, "id" | "employee_no" | "full_name">[] };
   create_employee: { Args: { p_profile: Json; p_salary?: Json; p_license_expiry?: string }; Returns: string };
 };
