@@ -162,5 +162,57 @@ test("signed-in school head can review a profile with no employee edit controls"
   await page.goto("/employees/" + employeeId);
   await expect(page.getByRole("heading", { name: "Maya H. Rivera" })).toBeVisible();
   await expect(page.getByText("Edit profile", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add photo" })).toHaveCount(0);
+  await expect(page.getByText(/view-only access to employee profiles/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Print this 201" })).toBeVisible();
+});
+
+test("personnel can add, replace and remove a private employee photo", async ({ page, request }) => {
+  const database = await databaseAs("personnel");
+  const { data: employee, error } = await database.from("employees").insert({
+    employee_no: `PHOTO-${crypto.randomUUID().slice(0, 8)}`,
+    full_name: "Synthetic Photo Employee",
+    position: "Teacher",
+    classification: "Teaching",
+    employment_status: "Permanent",
+  }).select("id").single();
+  if (error || !employee) throw new Error("Could not create a synthetic employee.");
+
+  const profile = `/employees/${employee.id}`;
+  const photo = page.locator('img[src^="/api/employee-photos/"]');
+  const add = async (action: "Add photo" | "Replace photo", previous?: string) => {
+    await page.getByRole("button", { name: action }).click();
+    const dialog = page.getByRole("dialog", { name: action });
+    await dialog.getByLabel("Profile photo").setInputFiles({
+      name: "synthetic.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aKTEAAAAASUVORK5CYII=", "base64"),
+    });
+    await dialog.getByRole("button", { name: "Save photo" }).click();
+    await expect(dialog).toBeHidden();
+    if (previous) await expect(photo).not.toHaveAttribute("src", previous);
+    await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+    return (await photo.getAttribute("src"))!;
+  };
+
+  try {
+    await loginAs(page, "personnel");
+    await page.goto(profile);
+    const first = await add("Add photo");
+    expect((await request.get(first, { maxRedirects: 0 })).status()).toBe(401);
+    await page.reload();
+    await expect(photo).toHaveAttribute("src", first);
+    const second = await add("Replace photo", first);
+    expect((await page.request.get(first, { maxRedirects: 0 })).status()).toBe(404);
+    await page.getByRole("button", { name: "Remove photo" }).click();
+    await page.getByRole("alertdialog", { name: "Remove this photo?" }).getByRole("button", { name: "Remove photo" }).click();
+    await expect(page.getByRole("button", { name: "Add photo" })).toBeVisible();
+    expect((await page.request.get(second, { maxRedirects: 0 })).status()).toBe(404);
+  } finally {
+    await database.from("employees").update({ photo_id: null }).eq("id", employee.id);
+    const storage = database.storage.from("employee-photos");
+    const { data: objects } = await storage.list(employee.id);
+    if (objects?.length) await storage.remove(objects.map((object) => `${employee.id}/${object.name}`));
+    await database.from("employees").update({ archived_at: new Date().toISOString() }).eq("id", employee.id);
+  }
 });

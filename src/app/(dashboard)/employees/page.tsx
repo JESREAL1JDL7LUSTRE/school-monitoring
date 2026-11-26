@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { employeeReference } from "@/modules/personnel/employee-route";
+import { EmployeePhoto } from "@/modules/personnel/employee-photo";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { getPersonnelPage } from "@/modules/personnel/queries";
 import { formatPersonnelDate, personnelFilterLabel, personnelFilters, personnelMetrics, readPersonnelFilter, type PersonnelFilter } from "@/modules/personnel/rules";
@@ -65,9 +66,15 @@ async function EmployeeResults({ filter, query, page }: { filter: PersonnelFilte
                 const metric = personnelMetrics(employee, context);
                 return (
                   <TableRow key={employee.id}>
-                    <TableCell><Link className="font-semibold underline-offset-4 hover:underline" href={`/employees/${employeeReference(employee)}`}>{employee.full_name}</Link>
-                      <span className="block text-xs text-muted-foreground">{employee.employee_no} · {employee.position}</span>
-                      {employee.custody_quantity > 0 && <span className="block text-xs">{employee.custody_quantity} in property custody</span>}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <EmployeePhoto employee={employee} size={36} />
+                        <div>
+                          <Link className="font-semibold underline-offset-4 hover:underline" href={`/employees/${employeeReference(employee)}`}>{employee.full_name}</Link>
+                          <span className="block text-xs text-muted-foreground">{employee.employee_no} · {employee.position}</span>
+                          {employee.custody_quantity > 0 && <span className="block text-xs">{employee.custody_quantity} in property custody</span>}
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell><Status>{employee.employment_status}</Status></TableCell>
                     <TableCell className="tabular-nums">{metric.age ?? "—"}<span className="block text-xs text-muted-foreground">{formatPersonnelDate(metric.retirementDate)} retirement</span></TableCell>

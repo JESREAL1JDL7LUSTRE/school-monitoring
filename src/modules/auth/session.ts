@@ -27,6 +27,7 @@ export const getSession = cache(async () => {
 export const requireSession = async () => {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (session.user.app_metadata.temporary_password === true) redirect("/reset-password");
   if (!session.roles.length) redirect("/login?access=pending");
   return session;
 };

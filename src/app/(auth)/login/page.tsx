@@ -7,9 +7,11 @@ import { getSession } from "@/modules/auth/session";
 import { signOut } from "@/modules/auth/actions";
 import { LoginForm } from "./login-form";
 
-const LoginPage = async () => {
+const LoginPage = async ({ searchParams }: PageProps<"/login">) => {
   const session = await getSession();
+  if (session?.user.app_metadata.temporary_password === true) redirect("/reset-password");
   if (session?.roles.length) redirect("/");
+  const passwordChanged = (await searchParams).password === "updated";
 
   return (
     <main className="grid min-h-dvh place-items-center bg-muted/40 px-4 py-10">
@@ -26,7 +28,12 @@ const LoginPage = async () => {
               <Alert><AlertDescription>Your account is signed in. Ask your administrator to assign a school role.</AlertDescription></Alert>
               <form action={signOut}><Button type="submit" variant="outline">Sign out</Button></form>
             </div>
-          ) : <LoginForm />}
+          ) : (
+            <div className="space-y-3">
+              {passwordChanged && <Alert role="status"><AlertDescription>Password updated. Sign in with your new password.</AlertDescription></Alert>}
+              <LoginForm />
+            </div>
+          )}
         </CardContent>
       </Card>
     </main>

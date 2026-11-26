@@ -12,6 +12,7 @@ export const concernPriorities = ["Low", "Medium", "High", "Urgent"] as const;
 export type Employee = {
   id: string;
   slug?: string;
+  photo_id?: string | null;
   employee_no: string;
   full_name: string;
   position: string;

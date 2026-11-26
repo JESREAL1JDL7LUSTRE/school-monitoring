@@ -11,7 +11,7 @@ Install Node.js 20.19 or later and start Docker Desktop. From the repository roo
     npx.cmd --yes supabase status -o env
     Copy-Item .env.example .env.local
 
-Set NEXT_PUBLIC_SUPABASE_URL in .env.local to the displayed API_URL, ordinarily http://127.0.0.1:54321. Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to PUBLISHABLE_KEY or the local ANON_KEY if the CLI displays a legacy key. These are the two application variables. Keep the service-role key, database password, and other administrative credentials out of the app environment.
+Set NEXT_PUBLIC_SUPABASE_URL in .env.local to the displayed API_URL, ordinarily http://127.0.0.1:54321. Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to PUBLISHABLE_KEY or the local ANON_KEY if the CLI displays a legacy key. Keep database passwords out of the app environment. Staff invitation credentials are optional and server-only.
 
     npm.cmd run dev
 
@@ -49,7 +49,7 @@ A user may hold multiple roles. All five roles can view the shared calendar. Adm
 
 ### Set up staff accounts for a school
 
-Create or invite each staff member in Supabase Auth with email sign-in enabled and public sign-up disabled. Use the SQL editor under an authorized database account to grant the initial administrator role to an existing, verified school account. Replace the example address.
+Enable email sign-in and disable public sign-up. Create the first administrator in Supabase Auth, then use the SQL editor under an authorized database account to grant the initial administrator role to that verified school account. Replace the example address.
 
     insert into public.staff_roles (user_id, role)
     select id, 'admin'::public.staff_role
@@ -58,7 +58,9 @@ Create or invite each staff member in Supabase Auth with email sign-in enabled a
       and email_confirmed_at is not null
     on conflict do nothing;
 
-The administrator can then assign roles under **School settings → Staff access**. Fill in the school identity, logo, signatories, and rules under **School settings**. The dashboard and reporting rules use the Philippines reference date by default. A fixed date and reporting year can be set for retrospective review or demonstrations.
+Under **School settings → Staff access**, administrators can invite new staff and change existing roles. The administrator copies the generated invitation message and shares it privately. Staff replace their temporary password on first sign-in. Set `SUPABASE_SERVICE_ROLE_KEY` in the server environment to enable account creation. The app sends no invitation or password recovery emails.
+
+Fill in the school identity, logo, signatories, and rules under **School settings**. The dashboard and reporting rules use the Philippines reference date by default. A fixed date and reporting year can be set for retrospective review or demonstrations.
 
 ## Checks
 

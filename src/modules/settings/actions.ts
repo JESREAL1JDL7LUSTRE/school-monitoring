@@ -37,7 +37,7 @@ export const saveStaffRole = async (_previous: SettingsActionState, form: FormDa
   const { operation, ...target } = parsed.data;
   const { data, error } = await supabase.rpc("update_staff_role", { ...target, enabled: operation === "grant" });
   if (error) return { error: "Could not change this role. Try again." };
-  if (data === "account_missing") return { error: "Create this staff account in Supabase Auth before assigning a role." };
+  if (data === "account_missing") return { error: "Use Invite staff to create this account and assign its first role." };
   if (data === "last_administrator") return { error: "Assign an active administrator before removing this role." };
   revalidatePath("/", "layout");
   return { message: "Staff access saved." };

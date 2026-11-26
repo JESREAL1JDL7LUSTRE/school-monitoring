@@ -47,9 +47,9 @@ export function RecordEditDialog({ trigger, title = trigger, description, wide =
   </div>;
 }
 
-export function EditorCancel({ disabled }: { disabled?: boolean }) {
+export function EditorCancel({ disabled, label = "Cancel" }: { disabled?: boolean; label?: string }) {
   const editor = useContext(EditorContext);
-  return editor && <Button type="button" variant="outline" disabled={disabled} onClick={editor.cancel}>Cancel</Button>;
+  return editor && <Button type="button" variant="outline" disabled={disabled} onClick={editor.cancel}>{label}</Button>;
 }
 
 export function useRecordAction<State>(

@@ -50,7 +50,10 @@ const SettingsPage = async ({ searchParams }: PageProps<"/settings">) => {
     <div className="max-w-4xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="desk-heading">School settings</h1>
-        {canEdit && <Button variant="outline" asChild><Link href="/settings/access">Manage staff access</Link></Button>}
+        <div className="flex flex-wrap gap-2">
+          {canEdit && <Button variant="outline" asChild><Link href="/settings/access">Manage staff access</Link></Button>}
+          <Button variant="outline" asChild><Link href="/reset-password">Change password</Link></Button>
+        </div>
       </header>
       <Card className="gap-0 py-0">
         <div className="px-4 sm:px-6">
@@ -64,6 +67,7 @@ const SettingsPage = async ({ searchParams }: PageProps<"/settings">) => {
               <SettingsForm section={section} settings={settings} logoUrl={logoUrl} />
             </RecordEditDialog>}
           </div>
+          {!canEdit && <p className="text-sm text-muted-foreground">Only administrators can edit school settings.</p>}
           {section === "rules" && <p className="text-sm text-muted-foreground">These values are draft assumptions. Verify them before relying on dates, salary estimates, or property classifications.</p>}
           <SettingsValues section={section} settings={settings} logoUrl={logoUrl} />
         </CardContent>

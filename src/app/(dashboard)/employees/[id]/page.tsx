@@ -11,6 +11,7 @@ import { employeeReference } from "@/modules/personnel/employee-route";
 import { PersonnelForm } from "@/modules/personnel/form";
 import { LicenseHistory, SalaryForm, SalaryTable } from "@/modules/personnel/history";
 import { EmployeeForm } from "@/modules/personnel/profile-form";
+import { ProfilePhoto } from "@/modules/personnel/photo-form";
 import { getEmployeeByReference, getEmployeeProfile } from "@/modules/personnel/queries";
 import { formatPersonnelDate, formatSalary, personnelMetrics } from "@/modules/personnel/rules";
 import { PersonnelHeading, Status } from "@/modules/personnel/ui";
@@ -46,6 +47,12 @@ export default async function EmployeePage({ params, searchParams }: PageProps<"
       <Card>
         <CardHeader><CardTitle>Employee profile</CardTitle></CardHeader>
         <CardContent className="space-y-5">
+          <ProfilePhoto employee={employee} canEdit={canEdit} />
+          {!canWrite && <p className="text-sm text-muted-foreground print:hidden">Your role has view-only access to employee profiles. An administrator can change your access.</p>}
+          {canWrite && employee.archived_at && <p className="text-sm text-muted-foreground print:hidden">Restore this employee to edit the profile and photo.</p>}
+          {canEdit && <RecordEditDialog trigger="Edit profile" description={employee.full_name} wide>
+            <EmployeeForm employee={employee} />
+          </RecordEditDialog>}
           <nav aria-label="Profile sections" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <a className="py-2 underline underline-offset-4" href="#checklist">201 checklist</a>
             <a className="py-2 underline underline-offset-4" href="#licenses">Licenses</a>
@@ -59,9 +66,6 @@ export default async function EmployeePage({ params, searchParams }: PageProps<"
           </dl>
           <p className="text-sm text-muted-foreground">Step, retirement, and loyalty dates use the school’s draft rules.</p>
           {canWrite && <div className="flex flex-wrap items-start gap-3 print:hidden">
-            {canEdit && <RecordEditDialog trigger="Edit profile" description={employee.full_name} wide>
-              <EmployeeForm employee={employee} />
-            </RecordEditDialog>}
             <PersonnelForm action={changeArchive} submitVariant="outline" submit={employee.archived_at ? "Restore employee" : "Archive employee"}
               confirmation={employee.archived_at ? {
                 title: "Restore employee?", description: `${employee.full_name} will return to active employee lists.`, label: "Restore employee",
@@ -81,6 +85,7 @@ export default async function EmployeePage({ params, searchParams }: PageProps<"
         <CardHeader><CardTitle>Salary and step history</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <SalaryTable rows={salaryHistory} asOf={context.asOf} />
+          {canEdit && <p className="text-sm text-muted-foreground">To update salary or step, add a change with its effective date. Earlier entries are kept for the record.</p>}
           {canEdit && <RecordEditDialog trigger="Add a salary change" description={employee.full_name} wide>
             <SalaryForm employeeId={id} asOf={context.asOf} />
           </RecordEditDialog>}

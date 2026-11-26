@@ -5,6 +5,7 @@ import { roleLabels } from "@/modules/auth/permissions";
 import { getStaffRoles } from "@/modules/settings/queries";
 import { SettingsNavigation } from "../settings-navigation";
 import { StaffAccessForm } from "./staff-access-form";
+import { StaffInviteForm } from "./staff-invite-form";
 
 const StaffAccessPage = async () => {
   const accounts = await getStaffRoles();
@@ -14,7 +15,7 @@ const StaffAccessPage = async () => {
         <h1 className="desk-heading">Staff access</h1>
       </header>
       <SettingsNavigation />
-      <StaffAccessForm />
+      <div className="flex flex-wrap items-start gap-3"><StaffInviteForm /><StaffAccessForm /></div>
       <Card>
         <CardHeader><CardTitle><h2>Staff accounts</h2></CardTitle></CardHeader>
         <CardContent>
