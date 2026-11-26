@@ -47,6 +47,7 @@ export default async function EmployeePage({ params, searchParams }: PageProps<"
       <Card>
         <CardHeader><CardTitle>Employee profile</CardTitle></CardHeader>
         <CardContent className="space-y-5">
+          {(await searchParams).photo === "retry" && <p role="alert">Employee created. Use Add photo to retry the upload.</p>}
           <ProfilePhoto employee={employee} canEdit={canEdit} />
           {!canWrite && <p className="text-sm text-muted-foreground print:hidden">Your role has view-only access to employee profiles. An administrator can change your access.</p>}
           {canWrite && employee.archived_at && <p className="text-sm text-muted-foreground print:hidden">Restore this employee to edit the profile and photo.</p>}

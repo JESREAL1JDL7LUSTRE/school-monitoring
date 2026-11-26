@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requirePermission } from "@/modules/auth/session";
 import { concernCategories, concernPriorities, concernStatuses, nosiStatuses } from "./database";
 import { employeeReference } from "./employee-route";
+import { validatePhoto } from "./photo-storage";
+import { saveEmployeePhoto } from "./photo-actions";
 import { getNosiCycle } from "./queries";
 import { employeeDateMetrics, manilaDate } from "./rules";
 import { grade, money, mutationFailure, optionalDate, personnelFailure, profileSchema, stalePersonnel, step, uuid, version, type PersonnelActionState } from "./validation";
@@ -37,6 +39,9 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
     grade, step, monthly_salary: money, effective_from: z.iso.date(),
   }).safeParse(Object.fromEntries(form)) : null;
   if (salary && !salary.success) return personnelFailure("Enter a salary grade (1–33), step (1–8), monthly salary and effective date.");
+  const selected = form.get("photo");
+  const photo = selected instanceof File && selected.size ? await validatePhoto(selected) : null;
+  if (typeof photo === "string") return personnelFailure(photo);
   const { data, error } = await supabase.rpc("create_employee", {
     p_profile: profile.data,
     ...(salary?.success ? { p_salary: salary.data } : {}),
@@ -45,8 +50,19 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
   const failure = mutationFailure(error, "This employee ID is already in use.");
   if (failure || !data) return failure ?? personnelFailure("The employee could not be created.");
   success("Employee added.", data);
-  const { data: employee } = await supabase.from("employees").select("slug").eq("id", data).maybeSingle();
-  redirect(`/employees/${employeeReference({ id: data, employee_no: profile.data.employee_no, slug: employee?.slug })}`);
+  const { data: employee } = await supabase.from("employees").select("slug,updated_at").eq("id", data).maybeSingle();
+  const path = `/employees/${employeeReference({ id: data, employee_no: profile.data.employee_no, slug: employee?.slug })}`;
+  if (photo) {
+    if (!employee) redirect(path + "?photo=retry");
+    const upload = new FormData();
+    upload.set("employee_id", data);
+    upload.set("version", employee.updated_at);
+    upload.set("operation", "upload");
+    upload.set("photo", photo);
+    const result = await saveEmployeePhoto({ ok: false, message: "" }, upload);
+    if (!result.ok) redirect(path + "?photo=retry");
+  }
+  redirect(path);
 }
 
 export async function changeArchive(_: PersonnelActionState, form: FormData) {

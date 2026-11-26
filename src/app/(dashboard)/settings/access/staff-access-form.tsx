@@ -4,19 +4,18 @@ import { useState } from "react";
 import { EditorCancel, RecordEditDialog, ReviewableForm, useRecordAction } from "@/components/record-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { roleLabels, type Role } from "@/modules/auth/permissions";
 import { saveStaffRole, type SettingsActionState } from "@/modules/settings/actions";
 
-export function StaffAccessForm() {
-  return <RecordEditDialog trigger="Change a role" description="Choose a staff account and the role to assign or remove." wide>
-    <StaffRoleEditor />
+export function StaffAccessForm({ emails }: { emails: string[] }) {
+  return <RecordEditDialog trigger="Change a role" description="Choose a staff account and the role to assign or remove. Other administrators manage their own roles." wide>
+    <StaffRoleEditor emails={emails} />
   </RecordEditDialog>;
 }
 
-function StaffRoleEditor() {
+function StaffRoleEditor({ emails }: { emails: string[] }) {
   const [operation, setOperation] = useState<"grant" | "revoke">("grant");
   const [state, action, pending] = useRecordAction(saveStaffRole, {} as SettingsActionState, (result) => result.message);
   return (
@@ -36,7 +35,10 @@ function StaffRoleEditor() {
       <fieldset disabled={pending} className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="target_email">Staff email</Label>
-          <Input variant="touch" id="target_email" name="target_email" type="email" autoComplete="off" required />
+          <NativeSelect id="target_email" name="target_email" size="touch" className="w-full" defaultValue="" required>
+            <NativeSelectOption value="" disabled>Choose a staff account</NativeSelectOption>
+            {emails.map((email) => <NativeSelectOption key={email} value={email}>{email}</NativeSelectOption>)}
+          </NativeSelect>
         </div>
         <div className="grid gap-2">
           <Label htmlFor="target_role">Role</Label>

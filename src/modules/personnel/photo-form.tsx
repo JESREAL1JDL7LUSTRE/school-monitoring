@@ -1,10 +1,9 @@
 import { RecordEditDialog } from "@/components/record-editor";
-import { Input } from "@/components/ui/input";
+import { PhotoPicker } from "./photo-picker";
 import type { Employee } from "./database";
 import { PersonnelForm } from "./form";
 import { saveEmployeePhoto } from "./photo-actions";
 import { EmployeePhoto } from "./employee-photo";
-import { Field } from "./ui";
 
 export function ProfilePhoto({ employee, canEdit }: { employee: Employee; canEdit: boolean }) {
   const record = <>
@@ -19,7 +18,7 @@ export function ProfilePhoto({ employee, canEdit }: { employee: Employee; canEdi
           <PersonnelForm action={saveEmployeePhoto} submit="Save photo">
             {record}
             <input type="hidden" name="operation" value="upload" />
-            <Field label="Profile photo"><Input variant="touch" type="file" name="photo" accept="image/jpeg,image/png,image/webp" required /></Field>
+            <PhotoPicker required />
           </PersonnelForm>
         </RecordEditDialog>
         {employee.photo_id && <PersonnelForm action={saveEmployeePhoto} submit="Remove photo" submitVariant="ghost"

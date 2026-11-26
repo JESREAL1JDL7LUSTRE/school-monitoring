@@ -70,7 +70,7 @@ export type Database = {
       list_staff_roles: { Args: Record<never, never>; Returns: { email: string; roles: Role[] }[] };
       update_staff_role: {
         Args: { target_email: string; target_role: Role; enabled: boolean };
-        Returns: "account_missing" | "last_administrator" | "saved";
+        Returns: "account_missing" | "last_administrator" | "protected_administrator" | "saved";
       };
       update_school_settings: { Args: { expected_updated_at: string; changes: Json }; Returns: boolean };
     } & PersonnelFunctions & InventoryFunctions & DocumentsFunctions;

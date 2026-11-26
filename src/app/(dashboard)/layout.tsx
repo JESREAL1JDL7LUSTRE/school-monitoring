@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signOut } from "@/modules/auth/actions";
 import { hasPermission, requireSession } from "@/modules/auth/session";
-import { getSchoolIdentity } from "@/modules/settings/queries";
+import { getSchoolSettings } from "@/modules/settings/queries";
 
 const iconProps = { size: 18, "aria-hidden": true } as const;
 
@@ -75,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 }
 
 async function SchoolIdentity() {
-  const settings = await getSchoolIdentity();
+  const settings = await getSchoolSettings();
   return <>
     <p className="font-semibold text-foreground">{settings.school_name}</p>
     <p className="text-muted-foreground">{[settings.region, settings.division].filter(Boolean).join(" · ")}</p>

@@ -1,38 +1,7 @@
 import "server-only";
 
-import { createClient } from "@supabase/supabase-js";
-import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { getSupabaseConfig } from "@/lib/supabase/config";
-import { supabaseTiming } from "@/lib/supabase/timing";
 import { requirePermission } from "@/modules/auth/session";
-import type { Database } from "@/types/database";
-
-export const schoolIdentityTag = "school-identity";
-
-export const getSchoolIdentity = cache(async () => {
-  const { supabase } = await requirePermission("settings.read");
-  const config = getSupabaseConfig();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!config || !session) throw new Error("Could not load school identity.");
-  const accessToken = session.access_token;
-
-  // Authorization runs for every request. Only this projection is identical across staff roles.
-  return unstable_cache(async () => {
-    const timedFetch = supabaseTiming("server");
-    const reader = createClient<Database>(config.url, config.key, {
-      accessToken: async () => accessToken,
-      global: { fetch: (input, init) => timedFetch(input, { ...init, cache: "no-store" }) },
-    });
-    const { data, error } = await reader.from("school_identity").select("school_name,region,division").single();
-    if (error?.code === "PGRST205" || error?.code === "42P01") {
-      const legacy = await reader.from("school_settings").select("school_name,region,division").eq("id", 1).single();
-      if (!legacy.error) return legacy.data;
-    }
-    if (error || !data) throw new Error("Could not load school identity.");
-    return data;
-  }, [config.url, schoolIdentityTag, "v1"], { tags: [schoolIdentityTag], revalidate: 300 })();
-});
 
 export const getStaffRoles = async () => {
   const { supabase } = await requirePermission("settings.write");

@@ -3,20 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/modules/auth/session";
-import { employeePhotoBucket, employeePhotoPath, employeePhotoSignatures } from "./photo-storage";
+import { employeePhotoBucket, employeePhotoPath, validatePhoto } from "./photo-storage";
 import { mutationFailure, personnelFailure, stalePersonnel, uuid, version, type PersonnelActionState } from "./validation";
 
 const photoChange = z.object({ employee_id: uuid, version, operation: z.enum(["upload", "remove"]) });
-
-async function validatePhoto(file: FormDataEntryValue | null) {
-  if (!(file instanceof File) || !file.size) return "Choose a photo to upload.";
-  if (file.size > 4 * 1024 * 1024) return "Choose a photo of 4 MB or less.";
-  if (!Object.hasOwn(employeePhotoSignatures, file.type)) return "Choose a JPEG, PNG, or WebP image.";
-  const signature = employeePhotoSignatures[file.type as keyof typeof employeePhotoSignatures];
-  const header = new Uint8Array(await file.slice(0, signature.length).arrayBuffer());
-  return signature.every((byte, index) => byte === null || header[index] === byte) && header.length === signature.length
-    ? file : "The file contents do not match the image format.";
-}
 
 export async function saveEmployeePhoto(_: PersonnelActionState, form: FormData) {
   const { supabase } = await requirePermission("personnel.write");

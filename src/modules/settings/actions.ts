@@ -1,11 +1,10 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/modules/auth/session";
 import { roleLabels, type Role } from "@/modules/auth/permissions";
 import { z } from "zod";
 import { settingsSchemas, type SettingsSection } from "./fields";
-import { schoolIdentityTag } from "./queries";
 import type { Json } from "@/types/database";
 
 const logoFormats = {
@@ -38,6 +37,7 @@ export const saveStaffRole = async (_previous: SettingsActionState, form: FormDa
   const { data, error } = await supabase.rpc("update_staff_role", { ...target, enabled: operation === "grant" });
   if (error) return { error: "Could not change this role. Try again." };
   if (data === "account_missing") return { error: "Use Invite staff to create this account and assign its first role." };
+  if (data === "protected_administrator") return { error: "Only that administrator can change their own roles." };
   if (data === "last_administrator") return { error: "Assign an active administrator before removing this role." };
   revalidatePath("/", "layout");
   return { message: "Staff access saved." };
@@ -81,7 +81,6 @@ export const saveSchoolSettings = async (section: SettingsSection, _previous: Se
   if (error) return fail("Could not save the school settings. Check the values and try again.");
   if (!data) return fail("Another staff member changed these settings. Reload before saving.");
 
-  if (section === "identity") updateTag(schoolIdentityTag);
   revalidatePath("/", "layout");
   return { message: "School settings saved." };
 };
