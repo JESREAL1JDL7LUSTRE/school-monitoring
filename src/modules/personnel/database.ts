@@ -10,6 +10,7 @@ export const concernCategories = ["201 Documents", "PRC License", "NOSI", "Loyal
 export const concernPriorities = ["Low", "Medium", "High", "Urgent"] as const;
 
 export type Employee = {
+  entered_by_email?: string | null;
   id: string;
   slug?: string;
   photo_id?: string | null;

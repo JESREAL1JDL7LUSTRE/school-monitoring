@@ -1,7 +1,7 @@
 export const permissions = [
   "personnel.read", "personnel.write", "files.read", "files.write",
   "inventory.read", "inventory.write", "settings.read", "settings.write", "audit.read",
-  "calendar.read", "calendar.write",
+  "calendar.read", "calendar.write", "super_admin.read",
 ] as const;
 
 export type Permission = (typeof permissions)[number];

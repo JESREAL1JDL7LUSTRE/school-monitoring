@@ -27,6 +27,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const groups: DeskNavGroup[] = [
     { links: [
       { href: "/", label: "Home", icon: <House {...iconProps} /> },
+      ...(hasPermission(session, "super_admin.read") ? [{ href: "/super-admin", label: "Super Admin", icon: <ChartNoAxesCombined {...iconProps} /> }] : []),
       { href: "/calendar", label: "Calendar", icon: <CalendarDays {...iconProps} /> },
     ] },
     ...(personnel ? [{ label: "Personnel", links: [

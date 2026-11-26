@@ -29,7 +29,7 @@ const StaffAccessPage = async () => {
                   <TableCell>{account.email}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1.5">
-                      {account.roles.length ? account.roles.map((role) => <Badge key={role} variant="secondary">{roleLabels[role]}</Badge>) : "Pending role"}
+                      {account.roles.length ? account.roles.map((role) => <Badge key={role} variant="secondary">{role === "admin" && account.is_super_admin ? "Super administrator" : roleLabels[role]}</Badge>) : "Pending role"}
                     </div>
                   </TableCell>
                 </TableRow>

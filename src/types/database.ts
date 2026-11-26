@@ -58,16 +58,22 @@ export type Database = {
       staff_roles: Table<{ user_id: string; role: Role; created_at: string }, never, never>;
     } & PersonnelTables & InventoryTables & DocumentsTables & CalendarTables;
     Views: InventoryViews & {
+      super_admin_records: { Row: {kind: string; record_id: string; label: string; entered_by_email: string | null; details: Json}; Relationships: [] };
       school_identity: { Row: Pick<SchoolSettings, "school_name" | "region" | "division">; Relationships: [] };
     };
     Functions: {
       get_staff_access: { Args: Record<never, never>; Returns: { roles: Role[]; permissions: Permission[] } };
+      super_admin_overview: { Args: Record<never, never>; Returns: {accounts: number; employees: number; inventory: number; week: {day: string; changes: number}[]} };
+      super_admin_activity: { Args: {p_query: string; p_email: string; p_before?: string}; Returns: {
+        event_id: string; changed_at: string; operation: string; kind: string; record_id: string;
+        actor: string | null; entered_by: string | null; before_values: Json; after_values: Json;
+      }[] };
       audit_log_page: {
         Args: { p_at?: string; p_id?: string; p_newer?: boolean };
         Returns: (Omit<AuditLog, "id" | "old_values" | "new_values"> & { id: string })[];
       };
       has_permission: { Args: { permission: Permission }; Returns: boolean };
-      list_staff_roles: { Args: Record<never, never>; Returns: { email: string; roles: Role[] }[] };
+      list_staff_roles: { Args: Record<never, never>; Returns: { email: string; roles: Role[]; is_super_admin: boolean }[] };
       update_staff_role: {
         Args: { target_email: string; target_role: Role; enabled: boolean };
         Returns: "account_missing" | "last_administrator" | "protected_administrator" | "saved";

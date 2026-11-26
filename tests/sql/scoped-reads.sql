@@ -3,6 +3,8 @@ begin;
 
 -- Run against the seeded local database. Roll back all synthetic rows.
 select id as administrator from auth.users where email = 'admin@school.example' \gset
+-- This paging test includes unattributed seed data across the school.
+update auth.users set raw_app_meta_data = raw_app_meta_data || '{"super_admin":true}' where id = :'administrator';
 insert into public.employees (employee_no, full_name, position, employment_status, classification)
 select 'TEST-READS-' || n, 'Synthetic directory employee', 'Test position', 'Permanent', 'NTP'
 from generate_series(1, 2000) n;

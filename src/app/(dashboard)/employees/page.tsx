@@ -72,6 +72,7 @@ async function EmployeeResults({ filter, query, page }: { filter: PersonnelFilte
                         <div>
                           <Link className="font-semibold underline-offset-4 hover:underline" href={`/employees/${employeeReference(employee)}`}>{employee.full_name}</Link>
                           <span className="block text-xs text-muted-foreground">{employee.employee_no} · {employee.position}</span>
+                          <span className="block text-xs text-muted-foreground">Entered by {employee.entered_by_email ?? "Unrecorded"}</span>
                           {employee.custody_quantity > 0 && <span className="block text-xs">{employee.custody_quantity} in property custody</span>}
                         </div>
                       </div>
