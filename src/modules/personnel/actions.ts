@@ -7,7 +7,7 @@ import { requirePermission } from "@/modules/auth/session";
 import { concernCategories, concernPriorities, concernStatuses, nosiStatuses } from "./database";
 import { employeeReference } from "./employee-route";
 import { validatePhoto } from "./photo-storage";
-import { saveEmployeePhoto } from "./photo-actions";
+import { updateEmployeePhoto } from "./photo-actions";
 import { getNosiCycle } from "./queries";
 import { employeeDateMetrics, manilaDate } from "./rules";
 import { grade, money, mutationFailure, optionalDate, personnelFailure, profileSchema, stalePersonnel, step, uuid, version, type PersonnelActionState } from "./validation";
@@ -24,11 +24,20 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
   const profile = profileSchema.safeParse(Object.fromEntries(form));
   if (!profile.success) return personnelFailure(profile.error.issues[0].message);
   if (profile.data.date_of_birth && profile.data.date_of_birth > manilaDate()) return personnelFailure("Birth date cannot be in the future.");
+  const selected = form.get("photo");
+  const photo = selected instanceof File && selected.size ? await validatePhoto(selected) : null;
+  if (typeof photo === "string") return personnelFailure(photo);
   const id = form.get("id");
   if (id) {
-    if (!uuid.safeParse(id).success || !version.safeParse(form.get("version")).success) return personnelFailure("Invalid employee version.");
-    const { error, data } = await supabase.from("employees").update(profile.data).eq("id", String(id))
-      .eq("updated_at", String(form.get("version"))).is("archived_at", null).select("id").maybeSingle();
+    const employeeId = uuid.safeParse(id);
+    const expected = version.safeParse(form.get("version"));
+    if (!employeeId.success || !expected.success) return personnelFailure("Invalid employee version.");
+    if (photo || form.get("remove_photo") === "on") {
+      const failure = await updateEmployeePhoto(supabase, employeeId.data, expected.data, photo, profile.data);
+      return failure ?? success("Employee record saved.", employeeId.data);
+    }
+    const { error, data } = await supabase.from("employees").update(profile.data).eq("id", employeeId.data)
+      .eq("updated_at", expected.data).is("archived_at", null).select("id").maybeSingle();
     const failure = mutationFailure(error, "This employee ID is already in use.");
     return failure ?? (data ? success("Employee record saved.", data.id) : personnelFailure(stalePersonnel));
   }
@@ -39,9 +48,6 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
     grade, step, monthly_salary: money, effective_from: z.iso.date(),
   }).safeParse(Object.fromEntries(form)) : null;
   if (salary && !salary.success) return personnelFailure("Enter a salary grade (1–33), step (1–8), monthly salary and effective date.");
-  const selected = form.get("photo");
-  const photo = selected instanceof File && selected.size ? await validatePhoto(selected) : null;
-  if (typeof photo === "string") return personnelFailure(photo);
   const { data, error } = await supabase.rpc("create_employee", {
     p_profile: profile.data,
     ...(salary?.success ? { p_salary: salary.data } : {}),
@@ -54,13 +60,9 @@ export async function saveEmployee(_: PersonnelActionState, form: FormData) {
   const path = `/employees/${employeeReference({ id: data, employee_no: profile.data.employee_no, slug: employee?.slug })}`;
   if (photo) {
     if (!employee) redirect(path + "?photo=retry");
-    const upload = new FormData();
-    upload.set("employee_id", data);
-    upload.set("version", employee.updated_at);
-    upload.set("operation", "upload");
-    upload.set("photo", photo);
-    const result = await saveEmployeePhoto({ ok: false, message: "" }, upload);
-    if (!result.ok) redirect(path + "?photo=retry");
+    const failure = await updateEmployeePhoto(supabase, data, employee.updated_at, photo);
+    if (failure) redirect(path + "?photo=retry");
+    success("Photo saved.", data);
   }
   redirect(path);
 }

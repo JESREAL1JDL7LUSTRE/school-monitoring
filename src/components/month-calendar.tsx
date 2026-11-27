@@ -1,8 +1,8 @@
 "use client";
 
-import { type ComponentProps, useOptimistic, useRef, useState, useTransition } from "react";
+import { type ComponentProps, type ReactNode, useOptimistic, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { CalendarAgenda, dateFromISO, fullDate, type AgendaEntry } from "@/modules/calendar/agenda";
@@ -14,6 +14,18 @@ const monthFormat = new Intl.DateTimeFormat("en-PH", { month: "long", timeZone: 
 const periodFormat = new Intl.DateTimeFormat("en-PH", { month: "long", year: "numeric", timeZone: "UTC" });
 const months = Array.from({ length: 12 }, (_, i) => monthFormat.format(new Date(Date.UTC(2000, i, 1))));
 const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export function CalendarHeading({ actions }: { actions?: ReactNode }) {
+  return <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex items-center gap-3">
+      <div className="grid size-11 place-items-center rounded-lg bg-accent text-accent-foreground">
+        <CalendarDays size={22} aria-hidden />
+      </div>
+      <h1 className="desk-heading">Calendar</h1>
+    </div>
+    {actions}
+  </header>;
+}
 
 function CalendarDay({ date, day, today, selectedDate, entries, onClick }: {
   date: string;
@@ -100,7 +112,8 @@ export function MonthCalendar({ today, monthKey, events, canAdd }: {
 
   return (
     <div className="space-y-5">
-      {canAdd && <div className="flex flex-wrap items-center gap-3">
+      <CalendarHeading actions={canAdd && <div className="ml-auto flex flex-wrap items-center gap-3">
+        <p role="status" className="text-sm text-muted-foreground">{saved ? "Event saved." : ""}</p>
         <Button type="button" ref={addButton} aria-expanded={formDate !== null}
           aria-controls={formDate ? "calendar-event-form" : undefined} onClick={() => {
             if (formDate) return closeForm();
@@ -109,8 +122,7 @@ export function MonthCalendar({ today, monthKey, events, canAdd }: {
           }}>
           <Plus aria-hidden="true" /> Add event
         </Button>
-        <p role="status" className="text-sm text-muted-foreground">{saved ? "Event saved." : ""}</p>
-      </div>}
+      </div>} />
       {formDate && <CalendarEventForm date={formDate} onCancel={closeForm} onSave={saveEvent} onPending={(entry) => {
         if (entry.event_date.startsWith(`${monthKey}-`)) showPendingEvent(entry);
       }} />}

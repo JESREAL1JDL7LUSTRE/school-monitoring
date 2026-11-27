@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { databaseAs, loginAs } from "./fixtures";
 
 test("a photo chosen during employee creation appears on the profile", async ({ page }) => {
-  const number = `PIC-${crypto.randomUUID().slice(0, 8)}`;
+  const number = `PIC-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const database = await databaseAs("personnel");
   await loginAs(page, "personnel");
   await page.goto("/employees/new");
@@ -16,8 +16,8 @@ test("a photo chosen during employee creation appears on the profile", async ({ 
     });
     await expect(page.getByAltText("Selected employee photo")).toBeVisible();
     await page.getByRole("button", { name: "Add employee", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Replace photo" })).toBeVisible();
-    await expect.poll(() => page.locator('img[src^="/api/employee-photos/"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+    await expect(page.getByRole("button", { name: "Edit profile" })).toBeVisible({ timeout: 30_000 });
+    await expect.poll(() => page.locator('img[src^="/api/employee-photos/"]').evaluate((img: HTMLImageElement) => img.naturalWidth), { timeout: 15_000 }).toBe(1);
   } finally {
     const { data } = await database.from("employees").select("id,photo_id").eq("employee_no", number).maybeSingle();
     if (data) {

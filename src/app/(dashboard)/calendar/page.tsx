@@ -1,7 +1,6 @@
-import { CalendarDays } from "lucide-react";
 import { Suspense } from "react";
 import { DashboardLoading } from "@/components/dashboard-loading";
-import { MonthCalendar } from "@/components/month-calendar";
+import { CalendarHeading, MonthCalendar } from "@/components/month-calendar";
 import { hasPermission, requirePermission } from "@/modules/auth/session";
 import { resolveCalendarMonth, todayInManila } from "@/modules/calendar/dates";
 import { getCalendarEntries } from "@/modules/calendar/queries";
@@ -12,15 +11,9 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   const month = resolveCalendarMonth(params.month, today);
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center gap-3">
-        <div className="grid size-11 place-items-center rounded-lg bg-accent text-accent-foreground"><CalendarDays size={22} aria-hidden /></div>
-        <h1 className="desk-heading">Calendar</h1>
-      </header>
-      <Suspense fallback={<DashboardLoading kind="calendar" />}>
-        <CalendarContent today={today} month={month} canAdd={hasPermission(session, "calendar.write")} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div className="space-y-5"><CalendarHeading /><DashboardLoading kind="calendar" /></div>}>
+      <CalendarContent today={today} month={month} canAdd={hasPermission(session, "calendar.write")} />
+    </Suspense>
   );
 }
 

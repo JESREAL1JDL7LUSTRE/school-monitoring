@@ -4,12 +4,17 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { Employee } from "./database";
 
-export function PersonnelHeading({ title, children, actions }: { title: string; children?: ReactNode; actions?: ReactNode }) {
+export function PersonnelHeading({ title, children, actions, avatar }: {
+  title: string; children?: ReactNode; actions?: ReactNode; avatar?: ReactNode;
+}) {
   return (
     <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <h1 className="desk-heading">{title}</h1>
-        {children ? <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{children}</p> : null}
+      <div className="flex min-w-0 items-center gap-4">
+        {avatar}
+        <div className="min-w-0">
+          <h1 className="desk-heading">{title}</h1>
+          {children ? <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{children}</p> : null}
+        </div>
       </div>
       {actions}
     </header>
