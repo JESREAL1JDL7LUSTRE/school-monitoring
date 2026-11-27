@@ -21,7 +21,10 @@ export default async function EmployeesPage({ searchParams }: PageProps<"/employ
   const page = tablePage(search.page);
   return <div className="space-y-5">
     <PersonnelHeading title="Employees" actions={hasPermission(session, "personnel.write") &&
-      <Button asChild><Link href="/employees/new">Add employee</Link></Button>} />
+      <div className="flex flex-wrap gap-2">
+        <Button asChild><Link href="/employees/new">Add employee</Link></Button>
+        <Button asChild variant="outline"><Link href="/import/employees">Import spreadsheet</Link></Button>
+      </div>} />
     <Suspense key={JSON.stringify([filter, query, page])} fallback={<DashboardLoading filters />}>
       <EmployeeResults filter={filter} query={query} page={page} />
     </Suspense>

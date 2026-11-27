@@ -10,7 +10,7 @@ import type { InventoryActivityRow, InventoryIssuedLine, PhysicalCount } from ".
 import type { StockItem } from "./queries";
 import { classifyItem, dateInManila, money } from "./rules";
 import { InventoryTable } from "./table";
-import { InventoryCountForm, InventoryImportForm } from "./maintenance-forms";
+import { InventoryCountForm } from "./maintenance-forms";
 import type { SchoolSettings } from "@/types/database";
 
 export const InventoryMasterlist = ({ items, category, query, canWrite, settings, returnTo, pagination }: {
@@ -32,10 +32,7 @@ export const InventoryMasterlist = ({ items, category, query, canWrite, settings
         <CardTitle><h2>Item masterlist</h2></CardTitle>
         <div className="flex flex-wrap gap-2">
           {canWrite && <Button asChild><Link href={inventoryHref("/inventory/items/new", filter, returnTo)}>Add item</Link></Button>}
-          {canWrite && <RecordEditDialog trigger="Import Excel" description="Use category names already listed in School Admin Desk.">
-            <a className="text-sm text-primary underline underline-offset-4" href={exportUrl("template")}>Download blank Excel template</a>
-            <InventoryImportForm />
-          </RecordEditDialog>}
+          {canWrite && <Button asChild variant="outline"><Link href="/import/inventory">Import spreadsheet</Link></Button>}
           <Button asChild variant="outline"><a href={exportUrl("xlsx")}>Export Excel</a></Button>
           <Button asChild variant="outline"><a href={exportUrl("csv")}>Export backup CSV</a></Button>
           <Button asChild variant="outline"><Link href={inventoryHref("/inventory/reports/tags", filter, returnTo)}>Print all tags</Link></Button>

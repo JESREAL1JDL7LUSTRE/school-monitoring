@@ -129,6 +129,7 @@ export type PersonnelFunctions = {
     Returns: { context: PersonnelContext; result: PersonnelListPage }[];
   };
   inventory_employee_directory: { Args: Record<PropertyKey, never>; Returns: Pick<Employee, "id" | "employee_no" | "full_name">[] };
+  import_employees: { Args: { p_rows: Json }; Returns: number };
   create_employee: { Args: { p_profile: Json; p_salary?: Json; p_license_expiry?: string }; Returns: string };
 };
 

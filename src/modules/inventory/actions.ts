@@ -6,7 +6,6 @@ import { requirePermission } from "@/modules/auth/session";
 import { recordSlug, withRouteQuery } from "@/lib/record-slug";
 import { inventoryCategoryInput, inventoryCountInput, inventoryDocumentInput, inventoryItemInput } from "./validation";
 import { inventoryDetailFields } from "./rules";
-import { parseInventoryWorkbook } from "./workbook";
 import { inventoryHref, inventoryReturnTo } from "./return-navigation";
 
 export type InventoryActionState = { error?: string; message?: string };
@@ -139,26 +138,4 @@ export const savePhysicalCount = async (
   for (const report of ["rpci", "rpcppe", "annex-a"]) revalidatePath(`/inventory/reports/${report}`);
   revalidatePath("/logs");
   return { message: "Physical count recorded." };
-};
-
-export const importInventoryWorkbook = async (
-  _previous: InventoryActionState, form: FormData,
-): Promise<InventoryActionState> => {
-  const { supabase } = await requirePermission("inventory.write");
-  const file = form.get("file");
-  if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".xlsx") || file.size > 2 * 1024 * 1024) {
-    return errorState("Choose an Excel workbook (.xlsx) up to 2 MB.");
-  }
-  const categories = await supabase.from("inventory_categories").select("id,name");
-  if (categories.error) return errorState("Could not load inventory categories.");
-  let rows;
-  try {
-    rows = await parseInventoryWorkbook(await file.arrayBuffer(), categories.data);
-  } catch (error) {
-    return errorState(error instanceof Error ? error.message : "Could not read this workbook.");
-  }
-  const { data, error } = await supabase.rpc("import_inventory_master", { p_rows: rows });
-  if (error) return errorState(error.code === "23505" ? "A code in this import is already used. No items were added." : "The import failed. No items were added.");
-  updateInventoryPages();
-  return { message: `${data} inventory item${data === 1 ? "" : "s"} imported.` };
 };

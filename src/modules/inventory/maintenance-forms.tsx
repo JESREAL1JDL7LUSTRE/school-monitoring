@@ -4,7 +4,7 @@ import { useId } from "react";
 import { EditorCancel, ReviewableForm, useRecordAction } from "@/components/record-editor";
 import { Button } from "@/components/ui/button";
 import { NativeSelectOption } from "@/components/ui/native-select";
-import { importInventoryWorkbook, saveInventoryCategory, savePhysicalCount } from "./actions";
+import { saveInventoryCategory, savePhysicalCount } from "./actions";
 import { categoryTypes, type InventoryCategory } from "./database";
 import { InventoryFeedback, InventoryInput, InventorySelect } from "./ui";
 import type { StockItem } from "./queries";
@@ -56,24 +56,6 @@ export const InventoryCountForm = ({ items, date }: { items: StockItem[]; date: 
       <div className="flex flex-wrap justify-end gap-2">
         <EditorCancel disabled={pending} />
         <Button type="submit" disabled={pending}>{pending ? "Recording…" : "Record physical count"}</Button>
-      </div>
-    </ReviewableForm>
-  );
-};
-
-export const InventoryImportForm = () => {
-  const [state, action, pending] = useRecordAction(importInventoryWorkbook, {}, (result) => result.message);
-  return (
-    <ReviewableForm action={action} pending={pending} className="space-y-4" confirmation={{
-      title: "Import this Excel workbook?",
-      description: "The import creates inventory items and posts opening stock as receipts.",
-      label: "Confirm import",
-    }}>
-      <InventoryFeedback state={state} />
-      <fieldset disabled={pending}><InventoryInput label="Excel workbook" name="file" type="file" accept=".xlsx" required /></fieldset>
-      <div className="flex flex-wrap justify-end gap-2">
-        <EditorCancel disabled={pending} />
-        <Button type="submit" disabled={pending}>{pending ? "Importing…" : "Import Excel"}</Button>
       </div>
     </ReviewableForm>
   );
